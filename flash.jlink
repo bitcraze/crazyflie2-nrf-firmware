@@ -1,0 +1,6 @@
+loadbin cf2_nrf.bin 0x16000
+
+rx 100
+g
+
+q

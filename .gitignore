@@ -1,0 +1,16 @@
+*~
+*.o
+*.bin
+*.elf
+JLink.log
+cf2_nrf.map
+cf2_nrf.hex
+config.mk
+*.patch
+.cproject
+.project
+.settings
+
+#Nordic libs
+s110
+nrf51_sdk
