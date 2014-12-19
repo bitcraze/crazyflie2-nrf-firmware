@@ -1,6 +1,8 @@
 #Put your personal build config in config.mk and DO NOT COMMIT IT!
 -include config.mk
 
+CLOAD_SCRIPT ?= ../crazyflie-clients-python/bin/cfloader
+
 S110 ?= 1     # SoftDevice flashed or not
 BLE  ?= 1     # BLE mode activated or not. If disabled, CRTP mode is active
 
@@ -149,6 +151,14 @@ gdb: $(PROGRAM).elf
 
 flash_jlink:
 	JLinkExe -if swd -device NRF51822 flash.jlink
+
+cload: $(PROGRAM).bin
+ifeq ($(strip $(S110)), 1)
+	$(CLOAD_SCRIPT) flash $(PROGRAM).bin nrf51-fw
+else
+	@echo "Only S110 build can be bootloaded. Launch build and cload with S110=1"
+endif
+
 
 factory_reset:
 	make mass_erase
