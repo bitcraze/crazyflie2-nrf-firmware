@@ -108,13 +108,7 @@ int main()
   pmInit();
 
   if ((NRF_POWER->GPREGRET&0x01) == 0) {
-	  if (pmUSBPower()) {
 		  pmSetState(pmSysRunning);
-	  } else {
-		  pmSetState(pmAllOff);
-		  while (1)
-			  pmProcess();
-	  }
   }
 
   LED_ON();
