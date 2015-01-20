@@ -202,11 +202,17 @@ void mainloop()
               memcpy(packet->data, slRxPacket.data, slRxPacket.length);
               packet->size = slRxPacket.length;
 
-#if BLE
-             bleCrazyfliesSendPacket(packet);
-#endif
               esbSendTxPacket(packet);
             }
+
+#ifdef BLE
+            {
+              static EsbPacket pk;
+              memcpy(pk.data,  slRxPacket.data, slRxPacket.length);
+              pk.size = slRxPacket.length;
+              bleCrazyfliesSendPacket(&pk);
+            }
+#endif
 
             bzero(slRxPacket.data, SYSLINK_MTU);
           } // else the packet is dropped!
