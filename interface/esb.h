@@ -44,7 +44,7 @@ typedef struct esbPacket_s {
     uint8_t data[32];
   } __attribute__((packed));
   /* Written by the radio interrupt routine */
-  int rssi;
+  uint32_t rssi;
   unsigned int crc;
 } EsbPacket;
 
