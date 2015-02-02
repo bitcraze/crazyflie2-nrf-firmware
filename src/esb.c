@@ -144,7 +144,7 @@ void esbInterruptHandler()
       }
 
       pk = &rxPackets[rxq_head];
-      pk->rssi = NRF_RADIO->RSSISAMPLE;
+      pk->rssi = (uint8_t) NRF_RADIO->RSSISAMPLE;
       pk->crc = NRF_RADIO->RXCRC;
 
       // If no more space available on RX queue, drop packet!
