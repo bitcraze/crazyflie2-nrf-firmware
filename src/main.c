@@ -141,7 +141,7 @@ void mainloop()
   bool slReceived;
   static int vbatSendTime;
 	static int radioRSSISendTime;
-	static uint32_t rssi;
+	static uint8_t rssi;
 
   while(1)
   {
@@ -161,8 +161,8 @@ void mainloop()
     if ((esbReceived == false) && esbIsRxPacket())
     {
       EsbPacket* packet = esbGetRxPacket();
-			//Store RSSI here so that we can send it to STM later
-			rssi = packet->rssi;
+      //Store RSSI here so that we can send it to STM later
+      rssi = packet->rssi;
       memcpy(esbRxPacket.data, packet->data, packet->size);
       esbRxPacket.size = packet->size;
       esbReceived = true;
@@ -295,9 +295,9 @@ void mainloop()
 			radioRSSISendTime = systickGetTick();
 			slTxPacket.type = SYSLINK_RADIO_RSSI;
 			//This message contains only the RSSI measurement which consist
-			//of a single uint32_t
-			slTxPacket.length = sizeof(uint32_t);
-			memcpy(slTxPacket.data, &rssi, sizeof(uint32_t));
+			//of a single uint8_t
+			slTxPacket.length = sizeof(uint8_t);
+			memcpy(slTxPacket.data, &rssi, sizeof(uint8_t));
 
 			syslinkSend(&slTxPacket);
 		}
