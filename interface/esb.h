@@ -97,4 +97,7 @@ void esbSetTxPower(int power);
 /* Set of disable radio continuous wave */
 void esbSetContwave(bool enable);
 
+/* Set the address of the radio */
+void esbSetAddress(uint64_t address);
+
 #endif //__ESB_H__

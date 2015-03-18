@@ -46,6 +46,7 @@ bool syslinkSend(struct syslinkPacket *packet);
 #define SYSLINK_RADIO_DATARATE 0x02
 #define SYSLINK_RADIO_CONTWAVE 0x03
 #define SYSLINK_RADIO_RSSI     0x04
+#define SYSLINK_RADIO_ADDRESS  0x05
 
 
 #define SYSLINK_PM_SOURCE 0x10

@@ -174,7 +174,7 @@ void mainloop()
       EsbPacket* packet = &esbRxPacket;
       esbReceived = false;
 
-      if((packet->size == 4) && (packet->data[0]==0xff) && (packet->data[1]==0x03))
+      if((packet->size >= 4) && (packet->data[0]==0xff) && (packet->data[1]==0x03))
       {
         handleRadioCmd(packet);
       }
@@ -250,6 +250,19 @@ void mainloop()
             slTxPacket.type = SYSLINK_RADIO_CONTWAVE;
             slTxPacket.data[0] = slRxPacket.data[0];
             slTxPacket.length = 1;
+            syslinkSend(&slTxPacket);
+          }
+          break;
+        case SYSLINK_RADIO_ADDRESS:
+          if(slRxPacket.length == 5)
+          {
+            uint64_t address = 0;
+            memcpy(&address, &slRxPacket.data[0], 5);
+            esbSetAddress(address);
+
+            slTxPacket.type = SYSLINK_RADIO_ADDRESS;
+            memcpy(slTxPacket.data, slRxPacket.data, 5);
+            slTxPacket.length = 5;
             syslinkSend(&slTxPacket);
           }
           break;

@@ -44,6 +44,7 @@ static int channel = 2;
 static int datarate = esbDatarate2M;
 static int txpower = RADIO_TXPOWER_TXPOWER_0dBm;
 static bool contwave = false;
+static uint64_t address = 0xE7E7E7E7E7ULL;
 
 static enum {doTx, doRx} rs;      //Radio state
 
@@ -56,6 +57,31 @@ static int txq_head = 0;
 static int txq_tail = 0;
 
 static EsbPacket ackPacket;
+
+/* helper functions */
+
+static uint32_t swap_bits(uint32_t inp)
+{
+  uint32_t i;
+  uint32_t retval = 0;
+
+  inp = (inp & 0x000000FFUL);
+
+  for(i = 0; i < 8; i++)
+  {
+    retval |= ((inp >> i) & 0x01) << (7 - i);
+  }
+
+  return retval;
+}
+
+static uint32_t bytewise_bitswap(uint32_t inp)
+{
+  return (swap_bits(inp >> 24) << 24)
+       | (swap_bits(inp >> 16) << 16)
+       | (swap_bits(inp >> 8) << 8)
+       | (swap_bits(inp));
+}
 
 /* Radio protocol implementation */
 
@@ -225,9 +251,9 @@ void esbInit()
 
   // Radio address config
   // Using logical address 0 so only BASE0 and PREFIX0 & 0xFF are used
-  NRF_RADIO->PREFIX0 = 0xC4C3C2E7UL;  // Prefix byte of addresses 3 to 0
+  NRF_RADIO->PREFIX0 = 0xC4C3C200UL | (bytewise_bitswap(address >> 32) & 0xFF);  // Prefix byte of addresses 3 to 0
   NRF_RADIO->PREFIX1 = 0xC5C6C7C8UL;  // Prefix byte of addresses 7 to 4
-  NRF_RADIO->BASE0   = 0xE7E7E7E7UL;  // Base address for prefix 0
+  NRF_RADIO->BASE0   = bytewise_bitswap((uint32_t)address);  // Base address for prefix 0
   NRF_RADIO->BASE1   = 0x00C2C2C2UL;  // Base address for prefix 1-7
   NRF_RADIO->TXADDRESS = 0x00UL;      // Set device address 0 to use when transmitting
   NRF_RADIO->RXADDRESSES = 0x01UL;    // Enable device address 0 to use which receiving
@@ -376,3 +402,9 @@ void esbSetTxPower(int power)
   esbReset();
 }
 
+void esbSetAddress(uint64_t addr)
+{
+  address = addr;
+
+  esbReset();
+}
