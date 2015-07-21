@@ -27,6 +27,9 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#define SYSLINK_STARTUP_DELAY_TIME_MS 1000
+#define SYSLINK_SEND_PERIOD_MS 10
+
 #define SYSLINK_MTU 32
 
 struct syslinkPacket {

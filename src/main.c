@@ -280,40 +280,43 @@ void mainloop()
       }
     }
 
-    // Send the battery voltage and state to the STM every 100ms
-    if (systickGetTick() >= vbatSendTime+10) {
-      float fdata;
-      uint8_t flags = 0;
+    // Wait a while to start pushing over the syslink since UART pins are used to launch STM32 i bootloader as well
+    if (systickGetTick() > SYSLINK_STARTUP_DELAY_TIME_MS) {
+      // Send the battery voltage and state to the STM every SYSLINK_SEND_PERIOD_MS
+      if (systickGetTick() >= vbatSendTime + SYSLINK_SEND_PERIOD_MS) {
+        float fdata;
+        uint8_t flags = 0;
 
-      vbatSendTime = systickGetTick();
-      slTxPacket.type = SYSLINK_PM_BATTERY_STATE;
-      slTxPacket.length = 9;
+        vbatSendTime = systickGetTick();
+        slTxPacket.type = SYSLINK_PM_BATTERY_STATE;
+        slTxPacket.length = 9;
 
-      flags |= (pmIsCharging() == true)?0x01:0;
-      flags |= (pmUSBPower() == true)?0x02:0;
+        flags |= (pmIsCharging() == true)?0x01:0;
+        flags |= (pmUSBPower() == true)?0x02:0;
 
-      slTxPacket.data[0] = flags;
+        slTxPacket.data[0] = flags;
 
-      fdata = pmGetVBAT();
-      memcpy(slTxPacket.data+1, &fdata, sizeof(float));
+        fdata = pmGetVBAT();
+        memcpy(slTxPacket.data+1, &fdata, sizeof(float));
 
-      fdata = pmGetISET();
-      memcpy(slTxPacket.data+1+4, &fdata, sizeof(float));
+        fdata = pmGetISET();
+        memcpy(slTxPacket.data+1+4, &fdata, sizeof(float));
 
-      syslinkSend(&slTxPacket);
+        syslinkSend(&slTxPacket);
+      }
+      //Send an RSSI sample to the STM every 10ms(100Hz)
+
+      if (systickGetTick() >= radioRSSISendTime + 10) {
+        radioRSSISendTime = systickGetTick();
+        slTxPacket.type = SYSLINK_RADIO_RSSI;
+        //This message contains only the RSSI measurement which consist
+        //of a single uint8_t
+        slTxPacket.length = sizeof(uint8_t);
+        memcpy(slTxPacket.data, &rssi, sizeof(uint8_t));
+
+        syslinkSend(&slTxPacket);
+      }
     }
-		//Send an RSSI sample to the STM every 10ms(100Hz)
-		
-    if (systickGetTick() >= radioRSSISendTime + 10) {
-			radioRSSISendTime = systickGetTick();
-			slTxPacket.type = SYSLINK_RADIO_RSSI;
-			//This message contains only the RSSI measurement which consist
-			//of a single uint8_t
-			slTxPacket.length = sizeof(uint8_t);
-			memcpy(slTxPacket.data, &rssi, sizeof(uint8_t));
-
-			syslinkSend(&slTxPacket);
-		}
 #endif
 
     // Button event handling

@@ -163,11 +163,14 @@ static void pmRunSystem(bool enable)
     nrf_gpio_cfg_output(UART_TX_PIN);
     nrf_gpio_pin_set(UART_TX_PIN);
 
-    // Set 500mA current
     nrf_gpio_cfg_output(PM_EN1);
-    nrf_gpio_pin_set(PM_EN1);
     nrf_gpio_cfg_output(PM_EN2);
+    // Set 500mA current
+    nrf_gpio_pin_set(PM_EN1);
     nrf_gpio_pin_clear(PM_EN2);
+    // 980mA current
+//    nrf_gpio_pin_clear(PM_EN1);
+//    nrf_gpio_pin_set(PM_EN2);
 
     // Enable charging
     nrf_gpio_cfg_output(PM_CHG_EN);
