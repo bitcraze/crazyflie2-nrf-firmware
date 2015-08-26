@@ -14,7 +14,7 @@ Compiling with bluetooth support requires the nRF51_SDK and S110 packages.
 
 will download the zips and unpack them.
 If you want to download manually from the Nordic semiconductor website, you
-will find the details in nrf51_sdk and s110.
+will find the details in nrf51_sdk/readme and s110/readme.
 
 License
 -------
