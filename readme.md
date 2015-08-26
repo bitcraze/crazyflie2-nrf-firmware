@@ -1,5 +1,4 @@
-Crazyflie 2.0 NRF51 firmware
-============================
+# Crazyflie 2.0 NRF51 firmware [![Build Status](https://travis-ci.org/bitcraze/crazyflie2-nrf-firmware.svg)](https://travis-ci.org/bitcraze/crazyflie2-nrf-firmware)
 
 Source code of the firmware running in the Crazyflie 2.0 nRF51822.
 This microcontroller have a couple of roles:
