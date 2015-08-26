@@ -8,9 +8,13 @@ This microcontroller have a couple of roles:
    - Bluetooth low energy using the Nordic Semiconductor S110 stack
  - One-wire memory access
 
-Compiling with bluetooth support currently requires the nRF51_SDK and
-S110 packages. These can be downloaded from the Nordic semiconductor
-website. See s110/readme and nrf51_sdk/readme for exact version.
+Compiling with bluetooth support requires the nRF51_SDK and S110 packages.
+
+        ./tools/build/download_deps.sh
+
+will download the zips and unpack them.
+If you want to download manually from the Nordic semiconductor website, you
+will find the details in nrf51_sdk and s110.
 
 License
 -------
