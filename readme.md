@@ -23,10 +23,6 @@ Most of the code is licensed under LGPL-3.0.
 
 Some files under src/ble/ are modified from Nordic semiconductor examples.
 
-Downloading the nrf51_sdk and nordic S110 softdevice require to aquire one
-of the Nordic Semiconductor development kit. Discussion is in progress
-with Nordic to solve this situation.
-
 Compiling
 ---------
 
