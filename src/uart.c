@@ -168,6 +168,8 @@ char uartGetc()
   if (!isInit)
       return c;
 
+  // TODO: Add overrun check
+
   if (head!=tail) {
     c = rxq[tail++];
     if (tail >= Q_LENGTH) tail = 0;

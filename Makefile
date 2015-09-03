@@ -32,7 +32,7 @@ PROCESSOR = -mcpu=cortex-m0 -mthumb
 NRF= -DNRF51
 PROGRAM=cf2_nrf
 
-CFLAGS=$(PROCESSOR) $(NRF) $(PERSONAL_DEFINES) $(INCLUDES) -g3 -O0 -Wall# -fdata-sections
+CFLAGS+=$(PROCESSOR) $(NRF) $(PERSONAL_DEFINES) $(INCLUDES) -g3 -O0 -Wall# -fdata-sections
 CFLAGS+= -fsingle-precision-constant -ffast-math
 # --specs=nano.specs -flto
 ASFLAGS=$(PROCESSOR)

@@ -178,7 +178,11 @@ static void pmRunSystem(bool enable)
 
     // Enable RF power amplifier
     nrf_gpio_cfg_output(RADIO_PAEN_PIN);
+#ifdef DISABLE_PA
+    nrf_gpio_pin_clear(RADIO_PAEN_PIN);
+#else
     nrf_gpio_pin_set(RADIO_PAEN_PIN);
+#endif
 
     // Sink battery divider
     nrf_gpio_cfg_output(PM_VBAT_SINK_PIN);
