@@ -25,6 +25,7 @@
  */
 #include <stdlib.h>
 #include <stdbool.h>
+#include <string.h>
 
 #include "esb.h"
 
@@ -56,7 +57,14 @@ static EsbPacket txPackets[TXQ_LEN];
 static int txq_head = 0;
 static int txq_tail = 0;
 
-static EsbPacket ackPacket;
+// 1bit packet counters
+static int curr_down = 1;
+static int curr_up = 1;
+
+static bool has_safelink;
+
+static EsbPacket ackPacket;     // Empty ack packet
+static EsbPacket servicePacket; // Packet sent to answer a low level request
 
 /* helper functions */
 
@@ -103,7 +111,8 @@ static bool isRetry(EsbPacket *pk)
 }
 
 // Handles the queue
-static void setupTx(bool retry) {
+static void setupTx(bool retry)
+{
   static EsbPacket * lastSentPacket;
 
   if (retry) {
@@ -115,18 +124,28 @@ static void setupTx(bool retry) {
         txq_tail = ((txq_tail+1)%TXQ_LEN);
       }
     }
+    if (lastSentPacket == &servicePacket) {
+      servicePacket.size = 0;
+    }
 
-    if (txq_tail != txq_head) {
+    if (servicePacket.size) {
+      NRF_RADIO->PACKETPTR = (uint32_t)&servicePacket;
+      lastSentPacket = &servicePacket;
+    } else if (txq_tail != txq_head) {
       // Send next TX packet
       NRF_RADIO->PACKETPTR = (uint32_t)&txPackets[txq_tail];
+      txPackets[txq_tail].data[0] = (txPackets[txq_tail].data[0]&0xf3) | curr_down<<2;
       lastSentPacket = &txPackets[txq_tail];
     } else {
       // Send empty ACK
 #ifdef RSSI_ACK_PACKET
       ackPacket.size = 3;
-      ackPacket.data[0] = 0xff;
+      ackPacket.data[0] = 0xf3 | curr_down<<2;
       ackPacket.data[1] = 0x01;
       ackPacket.data[2] = NRF_RADIO->RSSISAMPLE;
+#else
+      ackPacket.size = 1;
+      ackPacket.data[0] = 0xf3 | curr_down<<2;
 #endif
       NRF_RADIO->PACKETPTR = (uint32_t)&ackPacket;
       lastSentPacket = &ackPacket;
@@ -140,7 +159,8 @@ static void setupTx(bool retry) {
   NRF_RADIO->TASKS_DISABLE = 1UL;
 }
 
-static void setupRx() {
+static void setupRx()
+{
   NRF_RADIO->PACKETPTR = (uint32_t)&rxPackets[rxq_head];
 
   NRF_RADIO->SHORTS &= ~RADIO_SHORTS_DISABLED_TXEN_Msk;
@@ -185,9 +205,33 @@ void esbInterruptHandler()
         return;
       }
 
+      // Match safeLink packet and answer it
+      if (pk->size == 3 && (pk->data[0]&0xf3) == 0xf3 && pk->data[1] == 0x05) {
+        has_safelink = pk->data[2];
+        memcpy(servicePacket.data, pk->data, 3);
+        servicePacket.size = 3;
+        setupTx(false);
+
+        // Reset packet counters
+        curr_down = 1;
+        curr_up = 1;
+        return;
+      }
+
       // Good packet received, yea!
-      rxq_head = ((rxq_head+1)%RXQ_LEN);
-      setupTx(false);
+      if (!has_safelink || (pk->data[0] & 0x08) != curr_up<<3) {
+        rxq_head = ((rxq_head+1)%RXQ_LEN);
+        curr_up = 1-curr_up;
+      }
+
+
+      if (!has_safelink || (pk->data[0]&0x04) != curr_down<<2) {
+        curr_down = 1-curr_down;
+        setupTx(false);
+      } else {
+        setupTx(true);
+      }
+
 
       break;
     case doTx:
