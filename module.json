@@ -1,4 +1,15 @@
 {
-  "artifactType": "firmware",
-  "buildScript": "tools/build/build.sh"
+  "version": "1.0",
+  "environmentReq": [
+    "arm-none-eabi"
+  ],
+  "artifacts": {
+    "file": [
+      {
+        "source": "*.bin",
+        "insertTag": true,
+        "destination": "currDir"
+      }
+    ]
+  }
 }
