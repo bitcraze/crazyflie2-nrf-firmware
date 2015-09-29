@@ -16,7 +16,7 @@ SIZE = $(CROSS_COMPILE)size
 GDB=$(CROSS_COMPILE)gdb
 
 OPENOCD           ?= openocd
-OPENOCD_DIR       ?= 
+OPENOCD_DIR       ?=
 OPENOCD_INTERFACE ?= $(OPENOCD_DIR)interface/stlink-v2.cfg
 OPENOCD_TARGET    ?= target/nrf51_stlink.tcl
 
@@ -26,15 +26,15 @@ NRF_S110 ?= s110
 
 INCLUDES= -I Include -I Include/gcc -Iinterface
 
-PERSONAL_DEFINES ?= 
+CONFIG = -DRSSI_ACK_PACKET
+BUILD_OPTION = -g3 -O0 -Wall -fsingle-precision-constant -ffast-math
+PERSONAL_DEFINES ?=
 
 PROCESSOR = -mcpu=cortex-m0 -mthumb
 NRF= -DNRF51
 PROGRAM=cf2_nrf
 
-CFLAGS+=$(PROCESSOR) $(NRF) $(PERSONAL_DEFINES) $(INCLUDES) -g3 -O0 -Wall# -fdata-sections
-CFLAGS+= -fsingle-precision-constant -ffast-math
-# --specs=nano.specs -flto
+CFLAGS+=$(PROCESSOR) $(NRF) $(PERSONAL_DEFINES) $(INCLUDES) $(CONFIG) $(BUILD_OPTION)
 ASFLAGS=$(PROCESSOR)
 LDFLAGS=$(PROCESSOR) -O0 --specs=nano.specs -Wl,-Map=$(PROGRAM).map# -Wl,--gc-sections
 ifdef SEMIHOSTING
@@ -64,14 +64,14 @@ OBJS += $(NRF51_SDK)/Source/sd_common/softdevice_handler.o
 OBJS += $(NRF51_SDK)/Source/app_common/app_timer.o
 
 
-CFLAGS += -DBLE_STACK_SUPPORT_REQD -DNRF51 
-CFLAGS += -I$(NRF51_SDK)/Include/gcc 
-CFLAGS += -I$(NRF51_SDK)/Include/ 
-CFLAGS += -I$(NRF51_SDK)/Include/ble/ 
-CFLAGS += -I$(NRF51_SDK)/Include/ble/ble_services/ 
+CFLAGS += -DBLE_STACK_SUPPORT_REQD -DNRF51
+CFLAGS += -I$(NRF51_SDK)/Include/gcc
+CFLAGS += -I$(NRF51_SDK)/Include/
+CFLAGS += -I$(NRF51_SDK)/Include/ble/
+CFLAGS += -I$(NRF51_SDK)/Include/ble/ble_services/
 CFLAGS += -I$(NRF_S110)/s110_nrf51822_7.0.0_API/include
-CFLAGS += -I$(NRF51_SDK)/Include/app_common/ 
-CFLAGS += -I$(NRF51_SDK)/Include/sd_common/ 
+CFLAGS += -I$(NRF51_SDK)/Include/app_common/
+CFLAGS += -I$(NRF51_SDK)/Include/sd_common/
 endif
 
 OBJS += src/main.o gcc_startup_nrf51.o system_nrf51.o src/uart.o \
