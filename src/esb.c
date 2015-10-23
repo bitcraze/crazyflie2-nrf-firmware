@@ -134,7 +134,9 @@ static void setupTx(bool retry)
     } else if (txq_tail != txq_head) {
       // Send next TX packet
       NRF_RADIO->PACKETPTR = (uint32_t)&txPackets[txq_tail];
-      txPackets[txq_tail].data[0] = (txPackets[txq_tail].data[0]&0xf3) | curr_down<<2;
+      if (has_safelink) {
+        txPackets[txq_tail].data[0] = (txPackets[txq_tail].data[0]&0xf3) | curr_down<<2;
+      }
       lastSentPacket = &txPackets[txq_tail];
     } else {
       // Send empty ACK
