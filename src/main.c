@@ -208,18 +208,17 @@ void mainloop()
 
               esbSendTxPacket(packet);
             }
-
+            bzero(slRxPacket.data, SYSLINK_MTU);
+          }
 #ifdef BLE
-            {
-              static EsbPacket pk;
-              memcpy(pk.data,  slRxPacket.data, slRxPacket.length);
-              pk.size = slRxPacket.length;
-              bleCrazyfliesSendPacket(&pk);
-            }
+          if (slRxPacket.length < SYSLINK_MTU) {
+            static EsbPacket pk;
+            memcpy(pk.data,  slRxPacket.data, slRxPacket.length);
+            pk.size = slRxPacket.length;
+            bleCrazyfliesSendPacket(&pk);
+          }
 #endif
 
-            bzero(slRxPacket.data, SYSLINK_MTU);
-          } // else the packet is dropped!
           break;
         case SYSLINK_RADIO_CHANNEL:
           if(slRxPacket.length == 1)
