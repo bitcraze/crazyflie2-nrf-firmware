@@ -19,6 +19,7 @@ OPENOCD           ?= openocd
 OPENOCD_DIR       ?=
 OPENOCD_INTERFACE ?= $(OPENOCD_DIR)interface/stlink-v2.cfg
 OPENOCD_TARGET    ?= target/nrf51_stlink.tcl
+OPENOCD_CMDS      ?=
 
 
 NRF51_SDK ?= nrf51_sdk/nrf51822
@@ -108,43 +109,43 @@ clean:
 ## Flash and debug targets
 
 flash: $(PROGRAM).hex
-	$(OPENOCD) -d2 -f $(OPENOCD_INTERFACE) -f $(OPENOCD_TARGET) -c init -c targets -c "reset halt" \
+	$(OPENOCD) -d2 -f $(OPENOCD_INTERFACE) $(OPENOCD_CMDS) -f $(OPENOCD_TARGET)  -c init -c targets -c "reset halt" \
                  -c "flash write_image erase $(PROGRAM).hex" -c "verify_image $(PROGRAM).hex" \
                  -c "reset run" -c shutdown
 
 flash_s110: $(NRF_S110)/s110_nrf51822_7.0.0_softdevice.hex
-	$(OPENOCD) -d2 -f $(OPENOCD_INTERFACE) -f $(OPENOCD_TARGET) -c init -c targets -c "reset halt" \
+	$(OPENOCD) -d2 -f $(OPENOCD_INTERFACE) $(OPENOCD_CMDS) -f $(OPENOCD_TARGET) -c init -c targets -c "reset halt" \
                  -c "nrf51 mass_erase" \
                  -c "flash write_image erase s110/s110_nrf51822_7.0.0_softdevice.hex" \
                  -c "reset run" -c shutdown
 
 flash_mbs: bootloaders/nrf_mbs_v1.0.hex
-	$(OPENOCD) -d2 -f $(OPENOCD_INTERFACE) -f $(OPENOCD_TARGET) -c init -c targets -c "reset halt" \
+	$(OPENOCD) -d2 -f $(OPENOCD_INTERFACE) $(OPENOCD_CMDS) -f $(OPENOCD_TARGET) -c init -c targets -c "reset halt" \
                  -c "flash write_image erase $^" -c "verify_image $^" -c "reset halt" \
 	               -c "mww 0x4001e504 0x01" -c "mww 0x10001014 0x3F000" \
 	               -c "reset run" -c shutdown
 
 flash_cload: bootloaders/cload_nrf_v1.0.hex
-	$(OPENOCD) -d2 -f $(OPENOCD_INTERFACE) -f $(OPENOCD_TARGET) -c init -c targets -c "reset halt" \
+	$(OPENOCD) -d2 -f $(OPENOCD_INTERFACE) $(OPENOCD_CMDS) -f $(OPENOCD_TARGET) -c init -c targets -c "reset halt" \
                  -c "flash write_image erase $^" -c "verify_image $^" -c "reset halt" \
 	               -c "mww 0x4001e504 0x01" -c "mww 0x10001014 0x3F000" \
 	               -c "mww 0x4001e504 0x01" -c "mww 0x10001080 0x3A000" -c "reset run" -c shutdown
 
 
 mass_erase:
-	$(OPENOCD) -d2 -f $(OPENOCD_INTERFACE) -f $(OPENOCD_TARGET) -c init -c targets -c "reset halt" \
+	$(OPENOCD) -d2 -f $(OPENOCD_INTERFACE) $(OPENOCD_CMDS) -f $(OPENOCD_TARGET) -c init -c targets -c "reset halt" \
                  -c "nrf51 mass_erase" -c shutdown
 
 reset:
-	$(OPENOCD) -d2 -f $(OPENOCD_INTERFACE) -f $(OPENOCD_TARGET) -c init -c targets \
+	$(OPENOCD) -d2 -f $(OPENOCD_INTERFACE) $(OPENOCD_CMDS) -f $(OPENOCD_TARGET) -c init -c targets \
 	               -c reset -c shutdown
 
 openocd: $(PROGRAM).elf
-	$(OPENOCD) -d2 -f $(OPENOCD_INTERFACE) -f $(OPENOCD_TARGET) -c init -c targets
+	$(OPENOCD) -d2 -f $(OPENOCD_INTERFACE) $(OPENOCD_CMDS) -f $(OPENOCD_TARGET) -c init -c targets
 
 
 semihosting: $(PROGRAM).elf
-	$(OPENOCD) -d2 -f $(OPENOCD_INTERFACE) -f $(OPENOCD_TARGET) -c init -c targets -c reset -c "arm semihosting enable" -c reset
+	$(OPENOCD) -d2 -f $(OPENOCD_INTERFACE) $(OPENOCD_CMDS) -f $(OPENOCD_TARGET) -c init -c targets -c reset -c "arm semihosting enable" -c reset
 
 gdb: $(PROGRAM).elf
 	$(GDB) -ex "target remote localhost:3333" -ex "monitor reset halt" $^
