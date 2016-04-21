@@ -28,7 +28,7 @@ NRF_S110 ?= s110
 INCLUDES= -I Include -I Include/gcc -Iinterface
 
 CONFIG = -DRSSI_ACK_PACKET
-BUILD_OPTION = -g3 -O0 -Wall -fsingle-precision-constant -ffast-math
+BUILD_OPTION = -g3 -O0 -Wall -fsingle-precision-constant -ffast-math -std=gnu11
 PERSONAL_DEFINES ?=
 
 PROCESSOR = -mcpu=cortex-m0 -mthumb
@@ -63,16 +63,20 @@ OBJS += $(NRF51_SDK)/Source/ble/ble_services/ble_srv_common.o
 OBJS += $(NRF51_SDK)/Source/ble/ble_services/ble_dis.o
 OBJS += $(NRF51_SDK)/Source/sd_common/softdevice_handler.o
 OBJS += $(NRF51_SDK)/Source/app_common/app_timer.o
-
+OBJS += $(NRF51_SDK)/Source/app_common/pstorage.o
+OBJS += $(NRF51_SDK)/Source/ble/device_manager/device_manager_peripheral.o
 
 CFLAGS += -DBLE_STACK_SUPPORT_REQD -DNRF51
 CFLAGS += -I$(NRF51_SDK)/Include/gcc
 CFLAGS += -I$(NRF51_SDK)/Include/
 CFLAGS += -I$(NRF51_SDK)/Include/ble/
 CFLAGS += -I$(NRF51_SDK)/Include/ble/ble_services/
+CFLAGS += -I$(NRF51_SDK)/Include/ble/device_manager/
 CFLAGS += -I$(NRF_S110)/s110_nrf51822_7.0.0_API/include
+CFLAGS += -I$(NRF_S110)/Include/
 CFLAGS += -I$(NRF51_SDK)/Include/app_common/
 CFLAGS += -I$(NRF51_SDK)/Include/sd_common/
+CFLAGS += -I$(NRF51_SDK)/Include/sdk/
 endif
 
 OBJS += src/main.o gcc_startup_nrf51.o system_nrf51.o src/uart.o \
