@@ -142,6 +142,7 @@ void mainloop()
   static int vbatSendTime;
 	static int radioRSSISendTime;
 	static uint8_t rssi;
+  static bool broadcast;
 
   while(1)
   {
@@ -163,6 +164,7 @@ void mainloop()
       EsbPacket* packet = esbGetRxPacket();
       //Store RSSI here so that we can send it to STM later
       rssi = packet->rssi;
+      broadcast = packet->match == 1;
       memcpy(esbRxPacket.data, packet->data, packet->size);
       esbRxPacket.size = packet->size;
       esbReceived = true;
@@ -186,7 +188,11 @@ void mainloop()
       {
         memcpy(slTxPacket.data, packet->data, packet->size);
         slTxPacket.length = packet->size;
-        slTxPacket.type = SYSLINK_RADIO_RAW;
+        if (broadcast) {
+          slTxPacket.type = SYSLINK_RADIO_RAW_BROADCAST;
+        } else {
+          slTxPacket.type = SYSLINK_RADIO_RAW;
+        }
 
         syslinkSend(&slTxPacket);
       }
