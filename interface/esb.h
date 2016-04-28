@@ -37,7 +37,7 @@ typedef struct esbPacket_s {
     union {
       uint8_t s1;
       struct {
-        uint8_t noack :1;
+        uint8_t ack :1;
         uint8_t pid :2;
       };
     };
@@ -48,6 +48,7 @@ typedef struct esbPacket_s {
    * from uint32_t to uint8_t without lose of precision */
   uint8_t rssi;
   unsigned int crc;
+  uint8_t match;
 } EsbPacket;
 
 typedef enum esbDatarate_e { esbDatarate250K=0,
