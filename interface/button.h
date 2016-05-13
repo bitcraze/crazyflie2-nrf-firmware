@@ -34,7 +34,7 @@
 #define BUTTON_PRESSED 0UL
 #define BUTTON_RELEASED 1UL
 
-#define BUTTON_LONGPRESS_TICK 300
+#define BUTTON_LONGPRESS_TICK 1000
 
 typedef enum {buttonIdle=0, buttonShortPress, buttonLongPress} ButtonEvent;
 
