@@ -321,13 +321,14 @@ void mainloop()
     // Button event handling
     ButtonEvent be = buttonGetState();
     bool usbConnected = pmUSBPower();
-    if ((pmGetState() != pmSysOff) && be && !usbConnected)
+    if ((pmGetState() != pmSysOff) && (be == buttonShortPress) && !usbConnected)
     {
       pmSetState(pmAllOff);
       /*swdInit();
       swdTest();*/
     }
-    else if ((pmGetState() != pmSysOff) && be && usbConnected)
+    else if ((pmGetState() != pmSysOff) && (be == buttonShortPress)
+                                        && usbConnected)
     {
     	//pmSetState(pmSysOff);
       pmSetState(pmAllOff);
