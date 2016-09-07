@@ -208,7 +208,6 @@ void esbInterruptHandler()
       }
 
       // Match safeLink packet and answer it
-#if 0 // Disabled until syslink is fixed in STM32, see bitcraze/crazyflie-firmware#69
       if (pk->size == 3 && (pk->data[0]&0xf3) == 0xf3 && pk->data[1] == 0x05) {
         has_safelink = pk->data[2];
         memcpy(servicePacket.data, pk->data, 3);
@@ -220,7 +219,6 @@ void esbInterruptHandler()
         curr_up = 1;
         return;
       }
-#endif
 
       // Good packet received, yea!
       if (!has_safelink || (pk->data[0] & 0x08) != curr_up<<3) {

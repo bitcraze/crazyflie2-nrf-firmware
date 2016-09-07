@@ -35,6 +35,9 @@
 #include "systick.h"
 #include "uart.h"
 
+#define HAS_TI_CHARGER
+#define HAS_BAT_SINK
+
 static PmState state;
 static PmState targetState;
 static bool systemBootloader=false;
@@ -103,6 +106,7 @@ static void pmNrfPower(bool enable)
   if (!enable) {
     //stop NRF
     LED_OFF();
+    nrf_gpio_pin_clear(RADIO_PAEN_PIN);
     nrf_gpio_cfg_input(PM_VBAT_SINK_PIN, NRF_GPIO_PIN_NOPULL);
     NRF_POWER->GPREGRET |= 0x01; // Workaround for not being able to determine reset reason...
 #ifdef BLE
@@ -163,6 +167,7 @@ static void pmRunSystem(bool enable)
     nrf_gpio_cfg_output(UART_TX_PIN);
     nrf_gpio_pin_set(UART_TX_PIN);
 
+#ifdef HAS_TI_CHARGER
     nrf_gpio_cfg_output(PM_EN1);
     nrf_gpio_cfg_output(PM_EN2);
     // Set 500mA current
@@ -175,6 +180,7 @@ static void pmRunSystem(bool enable)
     // Enable charging
     nrf_gpio_cfg_output(PM_CHG_EN);
     nrf_gpio_pin_clear(PM_CHG_EN);
+#endif
 
     // Enable RF power amplifier
     nrf_gpio_cfg_output(RADIO_PAEN_PIN);
@@ -184,9 +190,11 @@ static void pmRunSystem(bool enable)
     nrf_gpio_pin_set(RADIO_PAEN_PIN);
 #endif
 
+#ifdef HAS_BAT_SINK
     // Sink battery divider
     nrf_gpio_cfg_output(PM_VBAT_SINK_PIN);
     nrf_gpio_pin_clear(PM_VBAT_SINK_PIN);
+#endif
 
     pmStartAdc(adcVBAT);
 
