@@ -106,7 +106,15 @@ static void pmNrfPower(bool enable)
   if (!enable) {
     //stop NRF
     LED_OFF();
+    // Turn off PA
     nrf_gpio_pin_clear(RADIO_PAEN_PIN);
+    // Disable 1-wire pull-up
+    nrf_gpio_pin_clear(OW_PULLUP_PIN);
+    // CE, EN1 and EN2 externally pulled low. Put low to not draw any current.
+    nrf_gpio_pin_clear(PM_EN1);
+    nrf_gpio_pin_clear(PM_EN2);
+    nrf_gpio_pin_clear(PM_CHG_EN);
+
     nrf_gpio_cfg_input(PM_VBAT_SINK_PIN, NRF_GPIO_PIN_NOPULL);
     NRF_POWER->GPREGRET |= 0x01; // Workaround for not being able to determine reset reason...
 #ifdef BLE
