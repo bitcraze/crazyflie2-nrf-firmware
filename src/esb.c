@@ -304,7 +304,11 @@ void esbInit()
   }
 
   // Radio address config
-  // Using logical address 0 so only BASE0 and PREFIX0 & 0xFF are used
+  // We use local addresses 0 and 1
+  //  * local address 0 is the unique address of the Crazyflie, used for 1-to-1 communication.
+  //    This can be set dynamically and the current address is stored in EEPROM.
+  //  * local address 1 is used for broadcasts
+  //    This is currently 0xFFE7E7E7E7.
   NRF_RADIO->PREFIX0 = 0xC4C3FF00UL | (bytewise_bitswap(address >> 32) & 0xFF);  // Prefix byte of addresses 3 to 0
   NRF_RADIO->PREFIX1 = 0xC5C6C7C8UL;  // Prefix byte of addresses 7 to 4
   NRF_RADIO->BASE0   = bytewise_bitswap((uint32_t)address);  // Base address for prefix 0
