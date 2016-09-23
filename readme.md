@@ -10,7 +10,9 @@ This microcontroller have a couple of roles:
 
 Compiling with bluetooth support requires the nRF51_SDK and S110 packages.
 
-        ./tools/build/download_deps.sh
+```
+./tools/build/download_deps
+```
 
 will download the zips and unpack them.
 If you want to download manually from the Nordic semiconductor website, you
@@ -28,6 +30,11 @@ Compiling
 
 To compile arm-none-eabi- tools from https://launchpad.net/gcc-arm-embedded
 should be in the path.
+On Ubuntu, you can install the tools:
+
+```
+sudo apt-get install gcc-arm-none-eabi gdb-arm-none-eabi binutils-arm-none-eabi
+```
 
 Compilation options can be saved in config.mk. Main targets:
 
@@ -88,7 +95,7 @@ The MBR is part of the Softdevice. It boots the CPU and jump to MBS.
 The MBR contains methods to start the Softdevice and can flash softdevice
 and bootloader.
 
-The MBS handles the ON/OFF button and comunicate the duration of the press to
+The MBS handles the ON/OFF button and communicate the duration of the press to
 the bootloader so that the bootloader knows what to boot. The reason for the
 MBS is to allow updating the bootloader over the air while still having a
 write-protected piece of software that can start the STM32 in USB DFU mode
