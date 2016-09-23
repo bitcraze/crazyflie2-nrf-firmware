@@ -194,6 +194,7 @@ void esbInterruptHandler()
       pk = &rxPackets[rxq_head];
       pk->rssi = (uint8_t) NRF_RADIO->RSSISAMPLE;
       pk->crc = NRF_RADIO->RXCRC;
+      pk->match = NRF_RADIO->RXMATCH;
 
       // If no more space available on RX queue, drop packet!
       if (((rxq_head+1)%RXQ_LEN) == rxq_tail) {
@@ -202,7 +203,7 @@ void esbInterruptHandler()
       }
 
       // If this packet is a retry, send the same ACK again
-      if (isRetry(pk)) {
+      if (pk->ack && isRetry(pk)) {
         setupTx(true);
         return;
       }
@@ -226,12 +227,19 @@ void esbInterruptHandler()
         curr_up = 1-curr_up;
       }
 
-
-      if (!has_safelink || (pk->data[0]&0x04) != curr_down<<2) {
-        curr_down = 1-curr_down;
-        setupTx(false);
-      } else {
-        setupTx(true);
+      if (pk->ack)
+      {
+        if (!has_safelink || (pk->data[0]&0x04) != curr_down<<2) {
+          curr_down = 1-curr_down;
+          setupTx(false);
+        } else {
+          setupTx(true);
+        }
+      } else
+      {
+        // broadcast => no ack
+        NRF_RADIO->PACKETPTR = (uint32_t)&rxPackets[rxq_head];
+        NRF_RADIO->TASKS_START = 1UL;
       }
 
 
@@ -296,13 +304,17 @@ void esbInit()
   }
 
   // Radio address config
-  // Using logical address 0 so only BASE0 and PREFIX0 & 0xFF are used
-  NRF_RADIO->PREFIX0 = 0xC4C3C200UL | (bytewise_bitswap(address >> 32) & 0xFF);  // Prefix byte of addresses 3 to 0
+  // We use local addresses 0 and 1
+  //  * local address 0 is the unique address of the Crazyflie, used for 1-to-1 communication.
+  //    This can be set dynamically and the current address is stored in EEPROM.
+  //  * local address 1 is used for broadcasts
+  //    This is currently 0xFFE7E7E7E7.
+  NRF_RADIO->PREFIX0 = 0xC4C3FF00UL | (bytewise_bitswap(address >> 32) & 0xFF);  // Prefix byte of addresses 3 to 0
   NRF_RADIO->PREFIX1 = 0xC5C6C7C8UL;  // Prefix byte of addresses 7 to 4
   NRF_RADIO->BASE0   = bytewise_bitswap((uint32_t)address);  // Base address for prefix 0
-  NRF_RADIO->BASE1   = 0x00C2C2C2UL;  // Base address for prefix 1-7
+  NRF_RADIO->BASE1   = 0xE7E7E7E7UL;  // Base address for prefix 1-7
   NRF_RADIO->TXADDRESS = 0x00UL;      // Set device address 0 to use when transmitting
-  NRF_RADIO->RXADDRESSES = 0x01UL;    // Enable device address 0 to use which receiving
+  NRF_RADIO->RXADDRESSES = (1<<0) | (1<<1);    // Enable device address 0 and 1 to use which receiving
 
   // Packet configuration
   NRF_RADIO->PCNF0 = (PACKET0_S1_SIZE << RADIO_PCNF0_S1LEN_Pos) |
