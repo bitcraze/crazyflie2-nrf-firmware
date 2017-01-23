@@ -165,7 +165,7 @@ void mainloop()
       //Store RSSI here so that we can send it to STM later
       rssi = packet->rssi;
       // The received packet was a broadcast, if received on local address 1
-      broadcast = packet->match == 1;
+      broadcast = packet->match == ESB_MULTICAST_ADDRESS_MATCH;
       memcpy(esbRxPacket.data, packet->data, packet->size);
       esbRxPacket.size = packet->size;
       esbReceived = true;

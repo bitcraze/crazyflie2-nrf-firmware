@@ -60,6 +60,9 @@ typedef enum esbDatarate_e { esbDatarate250K=0,
 #define RADIO_RATE_1M esbDatarate1M
 #define RADIO_RATE_2M esbDatarate2M
 
+#define ESB_UNICAST_ADDRESS_MATCH 0
+#define ESB_MULTICAST_ADDRESS_MATCH 1
+
 /* Initialize the radio for ESB */
 void esbInit();
 

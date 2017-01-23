@@ -203,7 +203,7 @@ void esbInterruptHandler()
       }
 
       // If this packet is a retry, send the same ACK again
-      if (pk->ack && isRetry(pk)) {
+      if ((pk->match == ESB_UNICAST_ADDRESS_MATCH) && isRetry(pk)) {
         setupTx(true);
         return;
       }
@@ -227,7 +227,7 @@ void esbInterruptHandler()
         curr_up = 1-curr_up;
       }
 
-      if (pk->ack)
+      if ((pk->match == ESB_UNICAST_ADDRESS_MATCH))
       {
         if (!has_safelink || (pk->data[0]&0x04) != curr_down<<2) {
           curr_down = 1-curr_down;
