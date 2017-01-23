@@ -37,7 +37,7 @@ typedef struct esbPacket_s {
     union {
       uint8_t s1;
       struct {
-        uint8_t noack :1;
+        uint8_t ack :1;
         uint8_t pid :2;
       };
     };
@@ -48,6 +48,7 @@ typedef struct esbPacket_s {
    * from uint32_t to uint8_t without lose of precision */
   uint8_t rssi;
   unsigned int crc;
+  uint8_t match;
 } EsbPacket;
 
 typedef enum esbDatarate_e { esbDatarate250K=0,
@@ -58,6 +59,9 @@ typedef enum esbDatarate_e { esbDatarate250K=0,
 #define RADIO_RATE_250K esbDatarate250K
 #define RADIO_RATE_1M esbDatarate1M
 #define RADIO_RATE_2M esbDatarate2M
+
+#define ESB_UNICAST_ADDRESS_MATCH 0
+#define ESB_MULTICAST_ADDRESS_MATCH 1
 
 /* Initialize the radio for ESB */
 void esbInit();
