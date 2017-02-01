@@ -391,7 +391,11 @@ static void handleRadioCmd(struct esbPacket_s *packet)
 }
 
 #define BOOTLOADER_CMD_RESET_INIT 0xFF
-#define BOOTLOADER_CMD_RESET 0xF0
+#define BOOTLOADER_CMD_RESET      0xF0
+#define BOOTLOADER_CMD_ALLOFF     0x01
+#define BOOTLOADER_CMD_SYSOFF     0x02
+#define BOOTLOADER_CMD_SYSON      0x03
+#define BOOTLOADER_CMD_GETVBAT    0x04
 
 static void handleBootloaderCmd(struct esbPacket_s *packet)
 {
@@ -434,6 +438,31 @@ static void handleBootloaderCmd(struct esbPacket_s *packet)
 #else
         NVIC_SystemReset();
 #endif
+      }
+      break;
+    case BOOTLOADER_CMD_ALLOFF:
+      pmSetState(pmAllOff);
+      break;
+    case BOOTLOADER_CMD_SYSOFF:
+      pmSetState(pmSysOff);
+      break;
+    case BOOTLOADER_CMD_SYSON:
+      pmSysBootloader(false);
+      pmSetState(pmSysRunning);
+      break;
+    case BOOTLOADER_CMD_GETVBAT:
+      if (esbCanTxPacket()) {
+        float vbat = pmGetVBAT();
+        struct esbPacket_s *pk = esbGetTxPacket();
+
+        pk->data[0] = 0xff;
+        pk->data[1] = 0xfe;
+        pk->data[2] = BOOTLOADER_CMD_GETVBAT;
+
+        memcpy(&(pk->data[3]), &vbat, sizeof(float));
+        pk->size = 3 + sizeof(float);
+
+        esbSendTxPacket(pk);
       }
       break;
     default:
