@@ -208,27 +208,28 @@ void esbInterruptHandler()
         return;
       }
 
-      // Match safeLink packet and answer it
-      if (pk->size == 3 && (pk->data[0]&0xf3) == 0xf3 && pk->data[1] == 0x05) {
-        has_safelink = pk->data[2];
-        memcpy(servicePacket.data, pk->data, 3);
-        servicePacket.size = 3;
-        setupTx(false);
-
-        // Reset packet counters
-        curr_down = 1;
-        curr_up = 1;
-        return;
-      }
-
-      // Good packet received, yea!
-      if (!has_safelink || (pk->data[0] & 0x08) != curr_up<<3) {
-        rxq_head = ((rxq_head+1)%RXQ_LEN);
-        curr_up = 1-curr_up;
-      }
-
       if ((pk->match == ESB_UNICAST_ADDRESS_MATCH))
       {
+        // Match safeLink packet and answer it
+        if (pk->size == 3 && (pk->data[0]&0xf3) == 0xf3 && pk->data[1] == 0x05) {
+          has_safelink = pk->data[2];
+          memcpy(servicePacket.data, pk->data, 3);
+          servicePacket.size = 3;
+          setupTx(false);
+
+          // Reset packet counters
+          curr_down = 1;
+          curr_up = 1;
+          return;
+        }
+
+        // Good packet received, yea!
+        if (!has_safelink || (pk->data[0] & 0x08) != curr_up<<3) {
+          // Push the queue head to push this packet and prepare the next
+          rxq_head = ((rxq_head+1)%RXQ_LEN);
+          curr_up = 1-curr_up;
+        }
+
         if (!has_safelink || (pk->data[0]&0x04) != curr_down<<2) {
           curr_down = 1-curr_down;
           setupTx(false);
@@ -237,6 +238,8 @@ void esbInterruptHandler()
         }
       } else
       {
+        // Push the queue head to push this packet and prepare the next
+        rxq_head = ((rxq_head+1)%RXQ_LEN);
         // broadcast => no ack
         NRF_RADIO->PACKETPTR = (uint32_t)&rxPackets[rxq_head];
         NRF_RADIO->TASKS_START = 1UL;
