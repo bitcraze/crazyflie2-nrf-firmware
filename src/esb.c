@@ -28,6 +28,7 @@
 #include <string.h>
 
 #include "esb.h"
+#include "pm.h"
 
 #include <nrf.h>
 
@@ -145,6 +146,14 @@ static void setupTx(bool retry)
       ackPacket.data[0] = 0xf3 | curr_down<<2;
       ackPacket.data[1] = 0x01;
       ackPacket.data[2] = NRF_RADIO->RSSISAMPLE;
+#elif defined RSSI_VBAT_ACK_PACKET
+      ackPacket.size = 4 + sizeof(uint32_t);
+      ackPacket.data[0] = 0xf3 | curr_down<<2;
+      ackPacket.data[1] = 0x01;
+      ackPacket.data[2] = NRF_RADIO->RSSISAMPLE;
+      ackPacket.data[3] = 0x02;
+      uint32_t vBat = (uint32_t)(pmGetVBAT() * 1000); // Send voltage in mV
+      memcpy(&ackPacket.data[4], &vBat, sizeof(uint32_t));
 #else
       ackPacket.size = 1;
       ackPacket.data[0] = 0xf3 | curr_down<<2;
