@@ -64,9 +64,9 @@
   #define AIN_VBAT ADC_CONFIG_PSEL_AnalogInput2
   #define AIN_ISET ADC_CONFIG_PSEL_AnalogInput4
   #define AIN_VBAT_DIVIDER ADC_CONFIG_INPSEL_AnalogInputTwoThirdsPrescaling
-  #define ADC_SCALER 3
+  #define ADC_SCALER (3/2.0)
   //#define ADC_DIVIDER 4.54545454
-  #define ADC_DIVIDER (3.0/2.0)
+  #define ADC_DIVIDER ((510 + 110)/110.0)
 
   //#define NO_UART_FC
   //#define SYSLINK_CKSUM_MON
