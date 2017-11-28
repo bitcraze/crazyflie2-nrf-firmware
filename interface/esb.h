@@ -95,8 +95,11 @@ void esbSetDatarate(EsbDatarate datarate);
 /* Set channel */
 void esbSetChannel(unsigned int channel);
 
-/* Set output power */
+/* Set output power (according to nRF51 defines)*/
 void esbSetTxPower(int power);
+
+/* Set output power in Dbm*/
+void esbSetTxPowerDbm(int8_t powerDbm);
 
 /* Set of disable radio continuous wave */
 void esbSetContwave(bool enable);

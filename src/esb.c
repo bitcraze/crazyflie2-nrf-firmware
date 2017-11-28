@@ -472,6 +472,20 @@ void esbSetTxPower(int power)
   esbReset();
 }
 
+void esbSetTxPowerDbm(int8_t powerDbm)
+{
+  if      (powerDbm <= -30) { txpower = RADIO_TXPOWER_TXPOWER_Neg30dBm; }
+  else if (powerDbm <= -20) { txpower = RADIO_TXPOWER_TXPOWER_Neg20dBm; }
+  else if (powerDbm <= -16) { txpower = RADIO_TXPOWER_TXPOWER_Neg16dBm; }
+  else if (powerDbm <= -12) { txpower = RADIO_TXPOWER_TXPOWER_Neg12dBm; }
+  else if (powerDbm <= -8)  { txpower = RADIO_TXPOWER_TXPOWER_Neg8dBm; }
+  else if (powerDbm <= -4)  { txpower = RADIO_TXPOWER_TXPOWER_Neg4dBm; }
+  else if (powerDbm <=  0)  { txpower = RADIO_TXPOWER_TXPOWER_0dBm; }
+  else if (powerDbm >=  4)  { txpower = RADIO_TXPOWER_TXPOWER_Pos4dBm; }
+
+  esbReset();
+}
+
 void esbSetAddress(uint64_t addr)
 {
   address = addr;

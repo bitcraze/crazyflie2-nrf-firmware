@@ -272,6 +272,17 @@ void mainloop()
             syslinkSend(&slTxPacket);
           }
           break;
+        case SYSLINK_RADIO_POWER:
+          if(slRxPacket.length == 1)
+          {
+            esbSetTxPowerDbm((int8_t)slRxPacket.data[0]);
+
+            slTxPacket.type = SYSLINK_RADIO_POWER;
+            slTxPacket.data[0] = slRxPacket.data[0];
+            slTxPacket.length = 1;
+            syslinkSend(&slTxPacket);
+          }
+          break;
         case SYSLINK_PM_ONOFF_SWITCHOFF:
           pmSetState(pmAllOff);
           break;
