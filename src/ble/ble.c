@@ -74,6 +74,8 @@
 #define SEC_PARAM_MIN_KEY_SIZE               7                                         /**< Minimum encryption key size. */
 #define SEC_PARAM_MAX_KEY_SIZE               16                                        /**< Maximum encryption key size. */
 
+#define TX_POWER_LEVEL                      (-12)                                        /**< TX Power Level value. This will be set both in the TX Power service, in the advertising data, and also used to set the radio transmit power. */
+
 #define DEAD_BEEF                            0xDEADBEEF                                /**< Value used as error code on stack dump, can be used to identify stack location on stack unwind. */
 
 static ble_gap_sec_params_t                  m_sec_params;                             /**< Security requirements for this application. */
@@ -233,6 +235,9 @@ static void gap_params_init(void)
 
     err_code = sd_ble_gap_ppcp_set(&gap_conn_params);
     APP_ERROR_CHECK(err_code);
+
+    err_code = sd_ble_gap_tx_power_set(TX_POWER_LEVEL);
+    APP_ERROR_CHECK(err_code);
 }
 
 
@@ -246,6 +251,7 @@ static void advertising_init(void)
     uint32_t      err_code;
     ble_advdata_t advdata;
     uint8_t       flags = BLE_GAP_ADV_FLAGS_LE_ONLY_GENERAL_DISC_MODE;
+    int8_t        tx_power_level = TX_POWER_LEVEL;
 
     ble_uuid_t adv_uuids[] =
     {
@@ -261,6 +267,7 @@ static void advertising_init(void)
     advdata.include_appearance      = true;
     advdata.flags.size              = sizeof(flags);
     advdata.flags.p_data            = &flags;
+    advdata.p_tx_power_level        = &tx_power_level;
     advdata.uuids_more_available.uuid_cnt = sizeof(adv_uuids) / sizeof(adv_uuids[0]);
     advdata.uuids_more_available.p_uuids  = adv_uuids;
 
@@ -398,6 +405,14 @@ void ble_advertising_stop(void)
   uint32_t err_code;
 
   err_code = sd_ble_gap_adv_stop();
+  APP_ERROR_CHECK(err_code);
+}
+
+void ble_sd_stop(void)
+{
+  uint32_t err_code;
+
+  err_code = sd_softdevice_disable();
   APP_ERROR_CHECK(err_code);
 }
 

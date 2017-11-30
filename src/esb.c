@@ -441,6 +441,8 @@ void esbSetDatarate(EsbDatarate dr)
 
 void ble_advertising_stop(void);
 void advertising_start(void);
+void ble_sd_stop(void);
+
 void esbSetContwave(bool enable)
 {
   contwave = enable;
