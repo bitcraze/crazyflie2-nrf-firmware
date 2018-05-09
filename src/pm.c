@@ -37,6 +37,7 @@
 
 #define HAS_TI_CHARGER
 #define HAS_BAT_SINK
+#define HAS_RFX2411N
 
 static PmState state;
 static PmState targetState;
@@ -107,7 +108,13 @@ static void pmNrfPower(bool enable)
     //stop NRF
     LED_OFF();
     // Turn off PA
+#ifdef HAS_RFX2411N
+    nrf_gpio_pin_clear(RADIO_PA_RX_EN);
+    nrf_gpio_pin_clear(RADIO_PA_MODE);
+    nrf_gpio_pin_clear(RADIO_PA_ANT_SW);
+#else
     nrf_gpio_pin_clear(RADIO_PAEN_PIN);
+#endif
     // Disable 1-wire pull-up
     nrf_gpio_pin_clear(OW_PULLUP_PIN);
     // CE, EN1 and EN2 externally pulled low. Put low to not draw any current.
@@ -190,12 +197,31 @@ static void pmRunSystem(bool enable)
     nrf_gpio_pin_clear(PM_CHG_EN);
 #endif
 
+#ifdef HAS_RFX2411N
     // Enable RF power amplifier
-    nrf_gpio_cfg_output(RADIO_PAEN_PIN);
-#ifdef DISABLE_PA
-    nrf_gpio_pin_clear(RADIO_PAEN_PIN);
+    nrf_gpio_cfg_output(RADIO_PA_RX_EN);
+    nrf_gpio_cfg_output(RADIO_PA_MODE);
+    nrf_gpio_cfg_output(RADIO_PA_ANT_SW);
+    // Select chip antenna
+    nrf_gpio_pin_set(RADIO_PA_ANT_SW);
+
+  #ifdef RFX2411N_BYPASS_MODE
+      nrf_gpio_pin_set(RADIO_PA_MODE);
+  #else
+      nrf_gpio_pin_set(RADIO_PA_RX_EN);
+      nrf_gpio_pin_clear(RADIO_PA_MODE);
+  #endif
 #else
-    nrf_gpio_pin_set(RADIO_PAEN_PIN);
+      // Enable RF power amplifier
+      nrf_gpio_cfg_output(RADIO_PAEN_PIN);
+
+  #ifdef DISABLE_PA
+      nrf_gpio_pin_clear(RADIO_PAEN_PIN);
+      nrf_gpio_cfg_output(RADIO_PATX_DIS_PIN);
+      nrf_gpio_pin_clear(RADIO_PATX_DIS_PIN);
+  #else
+      nrf_gpio_pin_set(RADIO_PAEN_PIN);
+  #endif
 #endif
 
 #ifdef HAS_BAT_SINK

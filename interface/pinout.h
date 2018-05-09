@@ -101,6 +101,11 @@
 #define RADIO_PAEN_PIN 19
 #define RADIO_PATX_DIS_PIN 20
 
+#define RADIO_PA_RX_EN  20
+#define RADIO_PA_ANT_SW 18
+#define RADIO_PA_MODE   19
+
+
 #define STM_BOOT0_PIN 22
 #define STM_NRST_PIN 21
 
