@@ -35,9 +35,11 @@
 #include "systick.h"
 #include "uart.h"
 
+#define ADC_DIVIDER (float)(3.0 / 2.0)
+#define ADC_SCALER  3
+
 #define HAS_TI_CHARGER
 #define HAS_BAT_SINK
-#define HAS_RFX2411N
 
 static PmState state;
 static PmState targetState;
