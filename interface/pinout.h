@@ -64,9 +64,6 @@
   #define AIN_VBAT ADC_CONFIG_PSEL_AnalogInput2
   #define AIN_ISET ADC_CONFIG_PSEL_AnalogInput4
   #define AIN_VBAT_DIVIDER ADC_CONFIG_INPSEL_AnalogInputTwoThirdsPrescaling
-  #define ADC_SCALER 3
-  //#define ADC_DIVIDER 4.54545454
-  #define ADC_DIVIDER (3.0/2.0)
 
   //#define NO_UART_FC
   //#define SYSLINK_CKSUM_MON
@@ -101,6 +98,7 @@
 #define RADIO_PAEN_PIN 19
 #define RADIO_PATX_DIS_PIN 20
 
+// Pins if RFX2411N is used
 #define RADIO_PA_RX_EN  20
 #define RADIO_PA_ANT_SW 18
 #define RADIO_PA_MODE   19
