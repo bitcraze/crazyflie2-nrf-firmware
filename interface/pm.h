@@ -29,9 +29,6 @@ typedef enum {pmAllOff=0, pmSysOff=1, pmSysPowered=2, pmSysBootSetup=3, pmSysRun
 
 typedef enum {chgOff=0, chgCharging=1, chgCharged=2} ChgState;
 
-#define TICK_BETWEEN_STATE 2
-#define TICK_BETWEEN_ADC_MEAS 5
-
 void pmInit();
 
 bool pmUSBPower(void);

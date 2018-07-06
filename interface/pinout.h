@@ -63,7 +63,6 @@
   #define PM_CHG_PIN 0
   #define AIN_VBAT ADC_CONFIG_PSEL_AnalogInput2
   #define AIN_ISET ADC_CONFIG_PSEL_AnalogInput4
-  #define AIN_VBAT_DIVIDER ADC_CONFIG_INPSEL_AnalogInputTwoThirdsPrescaling
 
   //#define NO_UART_FC
   //#define SYSLINK_CKSUM_MON

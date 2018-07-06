@@ -35,8 +35,12 @@
 #include "systick.h"
 #include "uart.h"
 
+#define TICK_BETWEEN_STATE 2
+#define TICK_BETWEEN_ADC_MEAS 10
+
 #define ADC_DIVIDER (float)(110.0 / (110.0 + 510.0))
-#define ADC_SCALER 3
+#define ADC_SCALER (3.0/1.0)
+#define AIN_VBAT_DIVIDER ADC_CONFIG_INPSEL_AnalogInputOneThirdPrescaling
 
 //#define RFX2411N_BYPASS_MODE
 
@@ -45,8 +49,6 @@ static PmState targetState;
 static bool systemBootloader=false;
 
 typedef enum {adcVBAT, adcISET} ADCState;
-
-static ADCState adcState = adcVBAT;
 
 static float vBat;
 static float iSet;
@@ -86,17 +88,13 @@ bool pmIsCharging(void) {
 static void pmStartAdc(ADCState state)
 {
   // Only one VBAT used on RZR
-  if (state == adcVBAT) {
-    NRF_ADC->CONFIG = AIN_VBAT << ADC_CONFIG_PSEL_Pos |
-        ADC_CONFIG_REFSEL_VBG << ADC_CONFIG_REFSEL_Pos |
-        ADC_CONFIG_RES_10bit << ADC_CONFIG_RES_Pos |
-        AIN_VBAT_DIVIDER << ADC_CONFIG_INPSEL_Pos;
+  NRF_ADC->CONFIG = AIN_VBAT << ADC_CONFIG_PSEL_Pos |
+      ADC_CONFIG_REFSEL_VBG << ADC_CONFIG_REFSEL_Pos |
+      ADC_CONFIG_RES_10bit << ADC_CONFIG_RES_Pos |
+      AIN_VBAT_DIVIDER << ADC_CONFIG_INPSEL_Pos;
 
-    NRF_ADC->ENABLE = ADC_ENABLE_ENABLE_Enabled;
-    NRF_ADC->TASKS_START = 0x01;
-  }
-
-  adcState = state;
+  NRF_ADC->ENABLE = ADC_ENABLE_ENABLE_Enabled;
+  NRF_ADC->TASKS_START = 0x01;
 }
 
 static void pmNrfPower(bool enable)
@@ -178,9 +176,12 @@ static void pmRunSystem(bool enable)
     // Select chip antenna
     nrf_gpio_pin_set(RADIO_PA_ANT_SW);
 
-  #ifdef RFX2411N_BYPASS_MODE
-      nrf_gpio_pin_set(RADIO_PA_MODE);
-  #endif
+#ifdef RFX2411N_BYPASS_MODE
+    nrf_gpio_pin_set(RADIO_PA_MODE);
+#else
+    nrf_gpio_pin_set(RADIO_PA_RX_EN);
+    nrf_gpio_pin_clear(RADIO_PA_MODE);
+#endif
 
     pmStartAdc(adcVBAT);
 
@@ -254,16 +255,9 @@ void pmProcess() {
     uint16_t rawValue = NRF_ADC->RESULT;
     lastAdcTick = systickGetTick();
 
-	  if (adcState == adcVBAT) {
-		  vBat = (float) (rawValue / 1023.0) * 1.2 * ADC_SCALER * ADC_DIVIDER;
-		  pmStartAdc(adcISET);
-	  } else if (adcState == adcISET) {
-	    // Not applciacle for the RZR
-		  iSet = 0.0;
-		  pmStartAdc(adcVBAT);
-	  }
-	  //TODO: Handle the battery charging...
+    vBat = (float) (rawValue / 1023.0) * 1.2 * ADC_SCALER / ADC_DIVIDER;
+    iSet = 0.0;
+    pmStartAdc(adcVBAT);
   }
-
 }
 

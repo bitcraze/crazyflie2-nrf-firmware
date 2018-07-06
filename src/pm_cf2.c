@@ -35,8 +35,12 @@
 #include "systick.h"
 #include "uart.h"
 
+#define TICK_BETWEEN_STATE 2
+#define TICK_BETWEEN_ADC_MEAS 5
+
 #define ADC_DIVIDER (float)(3.0 / 2.0)
 #define ADC_SCALER  3
+#define AIN_VBAT_DIVIDER ADC_CONFIG_INPSEL_AnalogInputTwoThirdsPrescaling
 
 #define HAS_TI_CHARGER
 #define HAS_BAT_SINK
