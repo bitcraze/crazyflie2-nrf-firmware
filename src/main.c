@@ -177,11 +177,11 @@ void mainloop()
       EsbPacket* packet = &esbRxPacket;
       esbReceived = false;
 
-      if((packet->size >= 4) && (packet->data[0]==0xff) && (packet->data[1]==0x03))
+      if((packet->size >= 4) && (packet->data[0]&0xf3) == 0xf3 && (packet->data[1]==0x03))
       {
         handleRadioCmd(packet);
       }
-      else if ((packet->size >2) && (packet->data[0]==0xff) && (packet->data[1]==0xfe))
+      else if ((packet->size >2) && (packet->data[0]&0xf3) == 0xf3 && (packet->data[1]==0xfe))
       {
         handleBootloaderCmd(packet);
       }
