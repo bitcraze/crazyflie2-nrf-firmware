@@ -22,5 +22,6 @@
  * License along with this library.
  */
 #define HAS_RFX2411N
+//#define USE_EXT_ANTENNA
 
 #include "pm_cf2.c"
