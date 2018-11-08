@@ -44,6 +44,7 @@
 
 #define HAS_TI_CHARGER
 #define HAS_BAT_SINK
+//#define ENABLE_FAST_CHARGE_1A
 
 static PmState state;
 static PmState targetState;
@@ -191,12 +192,15 @@ static void pmRunSystem(bool enable)
 #ifdef HAS_TI_CHARGER
     nrf_gpio_cfg_output(PM_EN1);
     nrf_gpio_cfg_output(PM_EN2);
+#ifdef ENABLE_FAST_CHARGE_1A
+    // 980mA current
+    nrf_gpio_pin_clear(PM_EN1);
+    nrf_gpio_pin_set(PM_EN2);
+#else
     // Set 500mA current
     nrf_gpio_pin_set(PM_EN1);
     nrf_gpio_pin_clear(PM_EN2);
-    // 980mA current
-//    nrf_gpio_pin_clear(PM_EN1);
-//    nrf_gpio_pin_set(PM_EN2);
+#endif
 
     // Enable charging
     nrf_gpio_cfg_output(PM_CHG_EN);
@@ -208,8 +212,13 @@ static void pmRunSystem(bool enable)
     nrf_gpio_cfg_output(RADIO_PA_RX_EN);
     nrf_gpio_cfg_output(RADIO_PA_MODE);
     nrf_gpio_cfg_output(RADIO_PA_ANT_SW);
+  #ifdef USE_EXT_ANTENNA
+    // Select u.FL antenna
+    nrf_gpio_pin_clear(RADIO_PA_ANT_SW);
+  #else
     // Select chip antenna
     nrf_gpio_pin_set(RADIO_PA_ANT_SW);
+  #endif
 
   #ifdef RFX2411N_BYPASS_MODE
       nrf_gpio_pin_set(RADIO_PA_MODE);
