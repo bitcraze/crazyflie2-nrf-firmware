@@ -6,6 +6,8 @@ CLOAD_SCRIPT ?= ../crazyflie-clients-python/bin/cfloader
 S110 ?= 1     # SoftDevice flashed or not
 BLE  ?= 1     # BLE mode activated or not. If disabled, CRTP mode is active
 
+PLATFORM ?= cf2
+
 CROSS_COMPILE?=arm-none-eabi-
 
 CC=$(CROSS_COMPILE)gcc
@@ -22,7 +24,7 @@ OPENOCD_TARGET    ?= target/nrf51_stlink.tcl
 OPENOCD_CMDS      ?=
 
 
-POWER_MANAGEMENT  ?= cf2
+POWER_MANAGEMENT  ?= $(PLATFORM)
 
 NRF51_SDK ?= nrf51_sdk/nrf51822
 NRF_S110 ?= s110
@@ -35,7 +37,7 @@ PERSONAL_DEFINES ?=
 
 PROCESSOR = -mcpu=cortex-m0 -mthumb
 NRF= -DNRF51
-PROGRAM=cf2_nrf
+PROGRAM=$(PLATFORM)_nrf
 
 CFLAGS+=$(PROCESSOR) $(NRF) $(PERSONAL_DEFINES) $(INCLUDES) $(CONFIG) $(BUILD_OPTION)
 ASFLAGS=$(PROCESSOR)
@@ -85,7 +87,7 @@ OBJS += src/main.o gcc_startup_nrf51.o system_nrf51.o src/uart.o \
         src/syslink.o src/pm_$(POWER_MANAGEMENT).o src/systick.o src/button.o src/swd.o src/ow.o \
         src/ow/owlnk.o src/ow/ownet.o src/ow/owtran.o \
         src/ow/crcutil.o src/ds2431.o src/ds28e05.o src/esb.o src/memory.o \
-		src/platform_info.o
+		src/platform.o src/platform_$(PLATFORM).o
 
 all: $(PROGRAM).elf $(PROGRAM).bin $(PROGRAM).hex
 	$(SIZE) $(PROGRAM).elf
@@ -99,6 +101,7 @@ ifeq ($(strip $(BLE)),1)
 else
 	@echo "BLE  Disabled"
 endif
+	@echo "Built for platform $(PLATFORM)"
 
 $(PROGRAM).hex: $(PROGRAM).elf
 	$(OBJCOPY) $^ -O ihex $@

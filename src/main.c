@@ -30,6 +30,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "platform.h"
+
 #include "uart.h"
 #include "esb.h"
 #include "syslink.h"
@@ -38,7 +40,6 @@
 #include "pm.h"
 #include "pinout.h"
 #include "systick.h"
-#include "uart.h"
 
 #include "memory.h"
 #include "ownet.h"
@@ -74,6 +75,11 @@ static void handleBootloaderCmd(struct esbPacket_s *packet);
 
 int main()
 {
+  // Stop early if the platform is not supported
+  if (platformInit() != 0) {
+    while(1);
+  }
+
   systickInit();
   memoryInit();
 

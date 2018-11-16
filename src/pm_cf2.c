@@ -34,6 +34,7 @@
 #include "led.h"
 #include "systick.h"
 #include "uart.h"
+#include "platform.h"
 
 #define TICK_BETWEEN_STATE 2
 #define TICK_BETWEEN_ADC_MEAS 5
@@ -115,13 +116,13 @@ static void pmNrfPower(bool enable)
     //stop NRF
     LED_OFF();
     // Turn off PA
-#ifdef HAS_RFX2411N
-    nrf_gpio_pin_clear(RADIO_PA_RX_EN);
-    nrf_gpio_pin_clear(RADIO_PA_MODE);
-    nrf_gpio_pin_clear(RADIO_PA_ANT_SW);
-#else
-    nrf_gpio_pin_clear(RADIO_PAEN_PIN);
-#endif
+    if (platformHasRfx2411n) {
+      nrf_gpio_pin_clear(RADIO_PA_RX_EN);
+      nrf_gpio_pin_clear(RADIO_PA_MODE);
+      nrf_gpio_pin_clear(RADIO_PA_ANT_SW);
+    } else {
+      nrf_gpio_pin_clear(RADIO_PAEN_PIN);
+    }
     // Disable 1-wire pull-up
     nrf_gpio_pin_clear(OW_PULLUP_PIN);
     // CE, EN1 and EN2 externally pulled low. Put low to not draw any current.
@@ -207,37 +208,37 @@ static void pmRunSystem(bool enable)
     nrf_gpio_pin_clear(PM_CHG_EN);
 #endif
 
-#ifdef HAS_RFX2411N
-    // Enable RF power amplifier
-    nrf_gpio_cfg_output(RADIO_PA_RX_EN);
-    nrf_gpio_cfg_output(RADIO_PA_MODE);
-    nrf_gpio_cfg_output(RADIO_PA_ANT_SW);
-  #ifdef USE_EXT_ANTENNA
-    // Select u.FL antenna
-    nrf_gpio_pin_clear(RADIO_PA_ANT_SW);
-  #else
-    // Select chip antenna
-    nrf_gpio_pin_set(RADIO_PA_ANT_SW);
-  #endif
-
-  #ifdef RFX2411N_BYPASS_MODE
-      nrf_gpio_pin_set(RADIO_PA_MODE);
-  #else
-      nrf_gpio_pin_set(RADIO_PA_RX_EN);
-      nrf_gpio_pin_clear(RADIO_PA_MODE);
-  #endif
-#else
+  if (platformHasRfx2411n()) {
       // Enable RF power amplifier
-      nrf_gpio_cfg_output(RADIO_PAEN_PIN);
+      nrf_gpio_cfg_output(RADIO_PA_RX_EN);
+      nrf_gpio_cfg_output(RADIO_PA_MODE);
+      nrf_gpio_cfg_output(RADIO_PA_ANT_SW);
+    #ifdef USE_EXT_ANTENNA
+      // Select u.FL antenna
+      nrf_gpio_pin_clear(RADIO_PA_ANT_SW);
+    #else
+      // Select chip antenna
+      nrf_gpio_pin_set(RADIO_PA_ANT_SW);
+    #endif
 
-  #ifdef DISABLE_PA
-      nrf_gpio_pin_clear(RADIO_PAEN_PIN);
-      nrf_gpio_cfg_output(RADIO_PATX_DIS_PIN);
-      nrf_gpio_pin_clear(RADIO_PATX_DIS_PIN);
-  #else
-      nrf_gpio_pin_set(RADIO_PAEN_PIN);
-  #endif
-#endif
+    #ifdef RFX2411N_BYPASS_MODE
+        nrf_gpio_pin_set(RADIO_PA_MODE);
+    #else
+        nrf_gpio_pin_set(RADIO_PA_RX_EN);
+        nrf_gpio_pin_clear(RADIO_PA_MODE);
+    #endif
+  } else {
+        // Enable RF power amplifier
+        nrf_gpio_cfg_output(RADIO_PAEN_PIN);
+
+    #ifdef DISABLE_PA
+        nrf_gpio_pin_clear(RADIO_PAEN_PIN);
+        nrf_gpio_cfg_output(RADIO_PATX_DIS_PIN);
+        nrf_gpio_pin_clear(RADIO_PATX_DIS_PIN);
+    #else
+        nrf_gpio_pin_set(RADIO_PAEN_PIN);
+    #endif
+  }
 
 #ifdef HAS_BAT_SINK
     // Sink battery divider
