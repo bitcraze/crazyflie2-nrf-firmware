@@ -18,8 +18,8 @@ if [ ! -f ${sdkZip} ]; then
 fi
 
 s110Dir=${root}/s110
-s110Zip=${s110Dir}/s110_nrf51822_7.0.0.zip
+s110Zip=${s110Dir}/s110_nrf51822_7.3.0.zip
 if [ ! -f ${s110Zip} ]; then
-    $(${download_cmd} ${s110Zip} http://www.nordicsemi.com/eng/nordic/download_resource/48420/8/62400196)
+    $(${download_cmd} ${s110Zip} https://www.nordicsemi.com/-/media/Software-and-other-downloads/SoftDevices/S110/s110nrf51822730.zip?la=en&hash=BB921F4E2B47C8BF4B87783ED0F5DC235FB70287)
     unzip -q ${s110Zip} -d ${s110Dir}
 fi

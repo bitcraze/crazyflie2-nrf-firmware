@@ -76,7 +76,7 @@ CFLAGS += -I$(NRF51_SDK)/Include/
 CFLAGS += -I$(NRF51_SDK)/Include/ble/
 CFLAGS += -I$(NRF51_SDK)/Include/ble/ble_services/
 CFLAGS += -I$(NRF51_SDK)/Include/ble/device_manager/
-CFLAGS += -I$(NRF_S110)/s110_nrf51822_7.0.0_API/include
+CFLAGS += -I$(NRF_S110)/s110_nrf51822_7.3.0_API/include
 CFLAGS += -I$(NRF_S110)/Include/
 CFLAGS += -I$(NRF51_SDK)/Include/app_common/
 CFLAGS += -I$(NRF51_SDK)/Include/sd_common/
@@ -123,10 +123,10 @@ flash: $(PROGRAM).hex
                  -c "flash write_image erase $(PROGRAM).hex" -c "verify_image $(PROGRAM).hex" \
                  -c "reset run" -c shutdown
 
-flash_s110: $(NRF_S110)/s110_nrf51822_7.0.0_softdevice.hex
+flash_s110: $(NRF_S110)/s110_nrf51822_7.3.0_softdevice.hex
 	$(OPENOCD) -d2 -f $(OPENOCD_INTERFACE) $(OPENOCD_CMDS) -f $(OPENOCD_TARGET) -c init -c targets -c "reset halt" \
                  -c "nrf51 mass_erase" \
-                 -c "flash write_image erase s110/s110_nrf51822_7.0.0_softdevice.hex" \
+                 -c "flash write_image erase s110/s110_nrf51822_7.3.0_softdevice.hex" \
                  -c "reset run" -c shutdown
 
 flash_mbs: bootloaders/nrf_mbs_v1.0.hex
