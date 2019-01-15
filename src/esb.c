@@ -42,7 +42,7 @@
 
 static bool isInit = true;
 
-static int channel = 2;
+static int channel = 80;
 static int datarate = esbDatarate2M;
 static int txpower = RADIO_TXPOWER_TXPOWER_0dBm;
 static bool contwave = false;

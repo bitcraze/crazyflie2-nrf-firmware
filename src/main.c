@@ -56,10 +56,10 @@ extern int ble_init(void);
 #endif
 
 #ifndef DEFAULT_RADIO_RATE
-  #define DEFAULT_RADIO_RATE  esbDatarate250K
+  #define DEFAULT_RADIO_RATE  esbDatarate2M
 #endif
 #ifndef DEFAULT_RADIO_CHANNEL
-  #define DEFAULT_RADIO_CHANNEL 2
+  #define DEFAULT_RADIO_CHANNEL 80
 #endif
 
 static void mainloop(void);
