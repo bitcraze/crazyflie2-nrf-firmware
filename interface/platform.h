@@ -1,9 +1,19 @@
 #pragma once
 
+#include <stdint.h>
 #include <stdbool.h>
 
 #define PLATFORM_DEVICE_TYPE_STRING_MAX_LEN 33
 #define PLATFORM_DEVICE_TYPE_MAX_LEN 31
+
+typedef struct
+{
+  float    vbatFactor;
+  uint32_t adcPrescalingSetup;
+  uint32_t ticksBetweenAdcMeasurement;
+  bool     hasCharger;
+  bool     hasVbatSink;
+} PmConfig;
 
 /**
  * Fetch deviceType string from flash
@@ -40,3 +50,5 @@ int platformInitByDeviceType();
 // access to the current device capabilities. Not all platform has to implement
 // all functions
 bool platformHasRfx2411n();
+
+const PmConfig* platformGetPmConfig();

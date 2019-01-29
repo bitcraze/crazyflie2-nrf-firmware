@@ -1,12 +1,14 @@
 #include "platform.h"
 
 #include <string.h>
+#include <nrf.h>
 
 static const char *defaultDeviceType = "0;CF20;R=D";
 
 static char *deviceTypeStringLocation = (void*)0x3FFE0;
 
-bool static has_rfx2411n = false;
+static bool has_rfx2411n = false;
+static PmConfig pmConfig;
 
 void platformGetDeviceTypeString(char *deviceTypeString)
 {
@@ -66,14 +68,43 @@ int platformInitByDeviceType() {
 
   if (0 == strcmp(deviceType, "CF20")) {
     has_rfx2411n = false;
+    pmConfig.vbatFactor = ((3.0 / 2.0) / (100.0 / (100.0 + 200.0)));
+    pmConfig.adcPrescalingSetup = ADC_CONFIG_INPSEL_AnalogInputTwoThirdsPrescaling;
+    pmConfig.ticksBetweenAdcMeasurement = 5;
+    pmConfig.hasCharger = true;
+    pmConfig.hasVbatSink = true;
+
   } else if (0 == strcmp(deviceType, "CF21")) {
     has_rfx2411n = true;
+    pmConfig.vbatFactor = ((3.0 / 2.0) / (100.0 / (100.0 + 200.0)));
+    pmConfig.adcPrescalingSetup = ADC_CONFIG_INPSEL_AnalogInputTwoThirdsPrescaling;
+    pmConfig.ticksBetweenAdcMeasurement = 5;
+    pmConfig.hasCharger = true;
+    pmConfig.hasVbatSink = true;
+
   } else if (0 == strcmp(deviceType, "RR10")) {
     has_rfx2411n = true;
+    pmConfig.vbatFactor = ((3.0 / 1.0) / (110.0 / (110.0 + 510.0)));
+    pmConfig.adcPrescalingSetup = ADC_CONFIG_INPSEL_AnalogInputOneThirdPrescaling;
+    pmConfig.ticksBetweenAdcMeasurement = 10;
+    pmConfig.hasCharger = false;
+    pmConfig.hasVbatSink = false;
+
   } else if (0 == strcmp(deviceType, "RZ10")) {
     has_rfx2411n = true;
+    pmConfig.vbatFactor = ((3.0 / 1.0) / (110.0 / (110.0 + 510.0)));
+    pmConfig.adcPrescalingSetup = ADC_CONFIG_INPSEL_AnalogInputOneThirdPrescaling;
+    pmConfig.ticksBetweenAdcMeasurement = 10;
+    pmConfig.hasCharger = false;
+    pmConfig.hasVbatSink = false;
+
   } else {
     has_rfx2411n = false;
+    pmConfig.vbatFactor = ((3.0 / 2.0) / (100.0 / (100.0 + 200.0)));
+    pmConfig.adcPrescalingSetup = ADC_CONFIG_INPSEL_AnalogInputTwoThirdsPrescaling;
+    pmConfig.ticksBetweenAdcMeasurement = 5;
+    pmConfig.hasCharger = true;
+    pmConfig.hasVbatSink = true;
   }
 
   return 0;
@@ -81,4 +112,9 @@ int platformInitByDeviceType() {
 
 bool platformHasRfx2411n() {
   return has_rfx2411n;
+}
+
+const PmConfig* platformGetPmConfig()
+{
+  return &pmConfig;
 }
