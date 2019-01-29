@@ -11,5 +11,13 @@
         "destination": "currDir"
       }
     ]
+  },
+  "targets": {
+    "cf2": [
+      "PLATFORM=cf2"
+    ],
+    "tag": [
+      "PLATFORM=tag"
+    ]
   }
 }
