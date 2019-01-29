@@ -24,8 +24,6 @@ OPENOCD_TARGET    ?= target/nrf51_stlink.tcl
 OPENOCD_CMDS      ?=
 
 
-POWER_MANAGEMENT  ?= $(PLATFORM)
-
 NRF51_SDK ?= nrf51_sdk/nrf51822
 NRF_S110 ?= s110
 
@@ -84,7 +82,7 @@ CFLAGS += -I$(NRF51_SDK)/Include/sdk/
 endif
 
 OBJS += src/main.o gcc_startup_nrf51.o system_nrf51.o src/uart.o \
-        src/syslink.o src/pm_$(POWER_MANAGEMENT).o src/systick.o src/button.o src/swd.o src/ow.o \
+        src/syslink.o src/pm_cf2.o src/systick.o src/button.o src/swd.o src/ow.o \
         src/ow/owlnk.o src/ow/ownet.o src/ow/owtran.o \
         src/ow/crcutil.o src/ds2431.o src/ds28e05.o src/esb.o src/memory.o \
 		src/platform.o src/platform_$(PLATFORM).o

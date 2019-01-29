@@ -18,18 +18,6 @@
 void platformGetDeviceTypeString(char *deviceTypeString);
 
 /**
- * Parse deviceType string to extract the deviceType
- * 
- * Ignores the key=value sections.
- * 
- * \param [in] deviceTypeString deviceTypeString extracted from the hardware
- * \param [out] deviceType Buffer of at least PLATFORM_DEVICE_TYPE_MAX_LEN
- *                         bytes where the device type will be stored
- * \return 0 in case of success, 1 in case of failure.
- */
-int platformParseDeviceTypeString(const char* deviceTypeString, char* deviceType);
-
-/**
  * Initialize the platform
  * 
  * Initialize the platform discovering capabilities and returns if it has been successful
@@ -37,6 +25,15 @@ int platformParseDeviceTypeString(const char* deviceTypeString, char* deviceType
  * \return 0 in case of success, 1 in case of failure.
  */
 int platformInit();
+
+/**
+ * Initialize the platform based on device type
+ *
+ * Generic initialization based on device type
+ *
+ * \return 0 in case of success, 1 in case of failure.
+ */
+int platformInitByDeviceType();
 
 // ************** Capabilities functions **************
 // The following functions can be implemented by different platform to give
