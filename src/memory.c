@@ -40,12 +40,12 @@ static bool isInit;
 static int nMemory;
 
 #ifdef BLE
-#define OW_MAX_CACHED 1
+#define OW_MAX_CACHED 4
 static struct {unsigned char address[8]; unsigned char data[122];} owCache[OW_MAX_CACHED];
 
 static void cacheMemory(int nMem)
 {
-  if (nMemory<OW_MAX_CACHED) {
+  if (nMem<OW_MAX_CACHED) {
     owSerialNum(0, owCache[nMem].address, 1);
     ds28e05ReadMemory(0, 0, owCache[nMem].data, 112);
   }
@@ -88,7 +88,7 @@ int owScan()
     {
 #ifdef BLE
       cacheMemory(nMem);
-      if (nMemory>=OW_MAX_CACHED)
+      if (nMem>=OW_MAX_CACHED)
         break;
 #endif
       nMem++;
