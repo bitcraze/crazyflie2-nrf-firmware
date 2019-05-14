@@ -30,6 +30,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "debug.h"
 #include "platform.h"
 
 #include "uart.h"
@@ -80,6 +81,7 @@ int main()
     while(1);
   }
 
+  debugInit();
   systickInit();
   memoryInit();
 
@@ -128,6 +130,8 @@ int main()
   esbSetDatarate(DEFAULT_RADIO_RATE);
   esbSetChannel(DEFAULT_RADIO_CHANNEL);
 #endif
+
+  DEBUG_PRINT("Started\n");
 
   mainloop();
 
