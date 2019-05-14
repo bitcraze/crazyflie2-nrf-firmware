@@ -1,0 +1,9 @@
+## Copy this file to config.mk and modify to get you personal build configuration
+
+## Use SEGGER RTT for debugging
+# DEBUG_PRINT_ON_SEGGER_RTT ?= 1
+
+## Use J-Link as Debugger/flasher
+# OPENOCD_INTERFACE ?= interface/jlink.cfg
+# OPENOCD_TARGET    ?= target/nrf51.cfg
+# OPENOCD_CMDS      ?= -c "set WORKAREASIZE 0" -c "transport select swd"
