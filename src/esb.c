@@ -50,7 +50,7 @@ static uint64_t address = 0xE7E7E7E7E7ULL;
 
 static enum {doTx, doRx} rs;      //Radio state
 
-static EsbPacket rxPackets[TXQ_LEN];
+static EsbPacket rxPackets[RXQ_LEN];
 static int rxq_head = 0;
 static int rxq_tail = 0;
 
