@@ -1,7 +1,7 @@
 #Put your personal build config in config.mk and DO NOT COMMIT IT!
 -include config.mk
 
-CLOAD_SCRIPT ?= ../crazyflie-clients-python/bin/cfloader
+CLOAD_SCRIPT ?= python3 -m cfloader
 
 S110 ?= 1     # SoftDevice flashed or not
 BLE  ?= 1     # BLE mode activated or not. If disabled, CRTP mode is active

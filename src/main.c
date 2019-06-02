@@ -153,6 +153,7 @@ void mainloop()
 	static int radioRSSISendTime;
 	static uint8_t rssi;
   static bool broadcast;
+  static bool p2p;
 
   while(1)
   {
@@ -176,6 +177,12 @@ void mainloop()
       rssi = packet->rssi;
       // The received packet was a broadcast, if received on local address 1
       broadcast = packet->match == ESB_MULTICAST_ADDRESS_MATCH;
+      // If the packet is a null packet with data[1] == 0x8*, it is a P2P packet
+      if (packet->size >= 2 && (packet->data[0] & 0x3F) == 0x3F && (packet->data[1] & 0xF0) == 0x80) {
+        p2p = true;
+      } else {
+        p2p = false;
+      }
       memcpy(esbRxPacket.data, packet->data, packet->size);
       esbRxPacket.size = packet->size;
       esbReceived = true;
@@ -197,13 +204,26 @@ void mainloop()
       }
       else
       {
-        memcpy(slTxPacket.data, packet->data, packet->size);
-        slTxPacket.length = packet->size;
-        if (broadcast) {
-          slTxPacket.type = SYSLINK_RADIO_RAW_BROADCAST;
+        if (p2p == false) {
+          memcpy(slTxPacket.data, packet->data, packet->size);
+          slTxPacket.length = packet->size;
+          if (broadcast) {
+            slTxPacket.type = SYSLINK_RADIO_RAW_BROADCAST;
+          } else {
+            slTxPacket.type = SYSLINK_RADIO_RAW;
+          }
         } else {
-          slTxPacket.type = SYSLINK_RADIO_RAW;
+          // The first byte sent is the P2P port
+          slTxPacket.data[0] = packet->data[1] & 0x0F;
+          memcpy(&slTxPacket.data[1], &packet->data[2], packet->size-2);
+          slTxPacket.length = packet->size-2;
+          if (broadcast) {
+            slTxPacket.type = SYSLINK_RADIO_P2P_BROADCAST;
+          } else {
+            slTxPacket.type = SYSLINK_RADIO_P2P;
+          }
         }
+        
 
         syslinkSend(&slTxPacket);
       }

@@ -112,13 +112,13 @@ static bool isRetry(EsbPacket *pk)
 }
 
 // Handles the queue
-static void setupTx(bool retry)
+static void setupTx(bool retry, bool empty)
 {
   static EsbPacket * lastSentPacket;
 
-  if (retry) {
+  if (!empty && retry) {
     NRF_RADIO->PACKETPTR = (uint32_t)lastSentPacket;
-  } else {
+  } else if (!empty) { // Non-empty retry
     if (lastSentPacket != &ackPacket) {
       //No retry, TX payload has been sent!
       if (txq_head != txq_tail) {
@@ -161,6 +161,9 @@ static void setupTx(bool retry)
       NRF_RADIO->PACKETPTR = (uint32_t)&ackPacket;
       lastSentPacket = &ackPacket;
     }
+  } else { // Send back empty ack (for P2P)
+    ackPacket.size = 0;
+    NRF_RADIO->PACKETPTR = (uint32_t)&ackPacket;
   }
 
   //After being disabled the radio will automatically send the ACK
@@ -211,9 +214,20 @@ void esbInterruptHandler()
         return;
       }
 
+      // Ack P2P packets right away with empty ack
+      if (pk->match == ESB_UNICAST_ADDRESS_MATCH &&
+          pk->size >= 2 && (pk->data[0] & 0x3f) == 0x3f && (pk->data[1]&0xf0) == 0x80) {
+        setupTx(false, true);
+
+        // Push the queue head to push this packet and prepare the next
+        // The main loop will recognize it as a P2P packet
+        rxq_head = ((rxq_head+1)%RXQ_LEN);
+        return;
+      }
+
       // If this packet is a retry, send the same ACK again
       if ((pk->match == ESB_UNICAST_ADDRESS_MATCH) && isRetry(pk)) {
-        setupTx(true);
+        setupTx(true, false);
         return;
       }
 
@@ -224,7 +238,7 @@ void esbInterruptHandler()
           has_safelink = pk->data[2];
           memcpy(servicePacket.data, pk->data, 3);
           servicePacket.size = 3;
-          setupTx(false);
+          setupTx(false, false);
 
           // Reset packet counters
           curr_down = 1;
@@ -241,9 +255,9 @@ void esbInterruptHandler()
 
         if (!has_safelink || (pk->data[0]&0x04) != curr_down<<2) {
           curr_down = 1-curr_down;
-          setupTx(false);
+          setupTx(false, false);
         } else {
-          setupTx(true);
+          setupTx(true, false);
         }
       } else
       {

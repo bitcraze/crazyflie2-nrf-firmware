@@ -30,7 +30,7 @@
 #define SYSLINK_STARTUP_DELAY_TIME_MS 1000
 #define SYSLINK_SEND_PERIOD_MS 10
 
-#define SYSLINK_MTU 32
+#define SYSLINK_MTU 64
 
 struct syslinkPacket {
   uint8_t type;
@@ -52,6 +52,9 @@ bool syslinkSend(struct syslinkPacket *packet);
 #define SYSLINK_RADIO_ADDRESS       0x05
 #define SYSLINK_RADIO_RAW_BROADCAST 0x06
 #define SYSLINK_RADIO_POWER         0x07
+#define SYSLINK_RADIO_P2P           0x08
+#define SYSLINK_RADIO_P2P_ACK       0x09
+#define SYSLINK_RADIO_P2P_BROADCAST 0x0A
 
 
 #define SYSLINK_PM_SOURCE 0x10
