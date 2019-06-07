@@ -225,6 +225,17 @@ void esbInterruptHandler()
         return;
       }
 
+      // Ack Bootloader packets right away with empty ack
+      if (pk->match == ESB_UNICAST_ADDRESS_MATCH &&
+          pk->size >= 2 && (pk->data[0] & 0xf3) == 0xf3 && pk->data[1] == 0xfe) {
+        setupTx(false, true);
+
+        // Push the queue head to push this packet and prepare the next
+        // The main loop will recognize it as a bootloader packet
+        rxq_head = ((rxq_head+1)%RXQ_LEN);
+        return;
+      }
+
       // If this packet is a retry, send the same ACK again
       if ((pk->match == ESB_UNICAST_ADDRESS_MATCH) && isRetry(pk)) {
         setupTx(true, false);
