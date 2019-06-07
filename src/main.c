@@ -178,7 +178,7 @@ void mainloop()
       // The received packet was a broadcast, if received on local address 1
       broadcast = packet->match == ESB_MULTICAST_ADDRESS_MATCH;
       // If the packet is a null packet with data[1] == 0x8*, it is a P2P packet
-      if (packet->size >= 2 && (packet->data[0] & 0x3F) == 0x3F && (packet->data[1] & 0xF0) == 0x80) {
+      if (packet->size >= 2 && (packet->data[0] & 0xf3) == 0xf3 && (packet->data[1] & 0xF0) == 0x80) {
         p2p = true;
       } else {
         p2p = false;

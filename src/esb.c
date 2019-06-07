@@ -216,7 +216,7 @@ void esbInterruptHandler()
 
       // Ack P2P packets right away with empty ack
       if (pk->match == ESB_UNICAST_ADDRESS_MATCH &&
-          pk->size >= 2 && (pk->data[0] & 0x3f) == 0x3f && (pk->data[1]&0xf0) == 0x80) {
+          pk->size >= 2 && (pk->data[0] & 0xf3) == 0xf3 && (pk->data[1]&0xf0) == 0x80) {
         setupTx(false, true);
 
         // Push the queue head to push this packet and prepare the next
