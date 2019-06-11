@@ -44,16 +44,12 @@
 
 extern int bleEnabled;
 
-#ifndef TEST_CHANNEL
-#error Please provide a test channel with: make PERSONAL_DEFINES="-DTEST_CHANNEL=80"
-#endif
-
 #define RXQ_LEN 16
 #define TXQ_LEN 16
 
 static bool isInit = true;
 
-static int channel = TEST_CHANNEL;
+static int channel = 80;
 static int datarate = esbDatarate2M;
 static int txpower = RADIO_TXPOWER_TXPOWER_Neg12dBm;
 static bool contwave = false;
@@ -517,12 +513,11 @@ void esbSetContwave(bool enable)
 
 void esbSetChannel(unsigned int ch)
 {
-  // if (channel < 126) {
-	//   channel = ch;
-	// }
+  if (channel < 126) {
+	  channel = ch;
+	}
 
-  // esbReset();
-  // NOP
+  esbReset();
 }
 
 void esbSetTxPower(int power)
