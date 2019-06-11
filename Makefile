@@ -4,7 +4,7 @@
 PLATFORM ?= cf2
 -include platform/platform_$(PLATFORM).mk
 
-BLE      ?= 1    # BLE mode activated or not. If disabled, CRTP mode is active
+BLE      ?= 0    # BLE mode activated or not. If disabled, CRTP mode is active
 
 PROGRAM = $(PLATFORM)_nrf
 PROJECT_NAME     := crazyflie2_nrf_firmware
