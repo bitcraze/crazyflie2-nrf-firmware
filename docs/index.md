@@ -27,4 +27,3 @@ License
 Most of the code is licensed under LGPL-3.0.
 
 Some files under src/ble/ are modified from Nordic semiconductor examples.
-

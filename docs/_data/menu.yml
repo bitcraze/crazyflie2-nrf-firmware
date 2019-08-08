@@ -2,3 +2,6 @@
 - title: Building and Flashing
   subs:
     - {page_id: build_flash}
+- title: Explanation Functionalities
+  subs:
+    - {page_id: ble}
