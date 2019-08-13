@@ -4,4 +4,5 @@
     - {page_id: build_flash}
 - title: Explanation Functionalities
   subs:
+    - {page_id: syslink}
     - {page_id: ble}
