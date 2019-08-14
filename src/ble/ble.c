@@ -506,11 +506,6 @@ int ble_init(void)
     timeslot_start();
 }
 
-void ble_deinit(void)
-{
-    ble_sd_stop();
-}
-
 /**
  * @}
  */
