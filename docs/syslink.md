@@ -40,9 +40,9 @@ Packets are organized in groups to ease routing in firmwares:
 
 |  Group  | Name                             | Description|
 |  -------| ---------------------------------| ---------------------------------------------------|
-|  0x00   | [RADIO](#radio_packets)          | Radio related packets. For data and configuration|
-|  0x10   | [PM](#power_management_packets)  | Power management|
-|  0x20   | [OW](#one_wire_packets)          | One wire memory access|
+|  0x00   | [RADIO](#radio-packets)          | Radio related packets. For data and configuration|
+|  0x10   | [PM](#power-management-packets)  | Power management|
+|  0x20   | [OW](#one-wire-packets)          | One wire memory access|
 
 A packet type has its group in the high nibble and the type in the low
 nibble. In the rest of the page packet type are written with group.

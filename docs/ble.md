@@ -42,9 +42,9 @@ raw data. The first byte format is:
 
 |  **Bit** |  **Function**|
  | --------- |--------------|
-|  7       |  Start|
-|  5-6     |  PID|
-|  0-4     |  Length|
+|  7       |  Start       |
+|  5-6     |  PID         |
+|  0-4     |  Length      |
 |  ---------| --------------|
 
 *PID* (packet identifier) is incremented for every CRTP packet. It permits to make sure no
