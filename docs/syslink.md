@@ -64,9 +64,9 @@ RADIO\_RAW packet has been received.
 The NRF51 is regularly sending CRTP NULL packet or empty packets to the
 STM32 to get the communication working both ways.
 
-\<WRAP round info \> ***Note*** So far RADIO\_RAW is the only syslink
+**Note** So far RADIO\_RAW is the only syslink
 packet that has flow control constrain, all other packets can be sent
-full duplex at any moment. \</WRAP\>
+full duplex at any moment.
 
 ### RADIO\_CHANNEL
 
@@ -108,10 +108,10 @@ Allows to put the nRF51 in continuous wave mode. If enabled the nRF51
 will disable Bluetooth advertising and set its radio to emit a
 continuous sinus wave at the currently set channel frequency.
 
-\<WRAP center round important\> ***Warning*** Continuous wave is a test
+**Warning** _Continuous wave is a test
 mode used, among other thing, during manufacturing test. It will affect
 other wireless communication like Wifi and should be used with care in a
-test environment \</WRAP\>
+test environment_
 
 ### RADIO\_RSSI
 
@@ -142,7 +142,7 @@ goes in deep sleep.
 -   **Type**: 0x13
 -   **Format**:
 
-![](images/syslink.png)
+![syslink battery state](/images/syslink.png)
 
 -   **Flags**: Bit0: Charging. Bit1: USB Powered.
 -   **VBAT**: IEEE single float. Battery voltage.
