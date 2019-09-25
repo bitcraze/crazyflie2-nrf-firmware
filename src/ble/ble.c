@@ -74,7 +74,7 @@
 #define SEC_PARAM_MIN_KEY_SIZE               7                                         /**< Minimum encryption key size. */
 #define SEC_PARAM_MAX_KEY_SIZE               16                                        /**< Maximum encryption key size. */
 
-#define TX_POWER_LEVEL                      (-12)                                        /**< TX Power Level value. This will be set both in the TX Power service, in the advertising data, and also used to set the radio transmit power. */
+#define TX_POWER_LEVEL                      (-16)                                      /**< TX Power Level value. This will be set both in the TX Power service, in the advertising data, and also used to set the radio transmit power. */
 
 #define DEAD_BEEF                            0xDEADBEEF                                /**< Value used as error code on stack dump, can be used to identify stack location on stack unwind. */
 
