@@ -66,7 +66,7 @@ static bool has_safelink;
 
 static EsbPacket ackPacket;     // Empty ack packet
 static EsbPacket servicePacket; // Packet sent to answer a low level request
-
+static EsbPacket p2pPacket;     // Packet to send to other crazyflie in broadcast
 /* helper functions */
 
 static uint32_t swap_bits(uint32_t inp)
@@ -165,6 +165,8 @@ static void setupTx(bool retry, bool empty)
     ackPacket.size = 0;
     NRF_RADIO->PACKETPTR = (uint32_t)&ackPacket;
   }
+
+  NRF_RADIO->TXADDRESS = 0x00UL;
 
   //After being disabled the radio will automatically send the ACK
   NRF_RADIO->SHORTS &= ~RADIO_SHORTS_DISABLED_RXEN_Msk;
@@ -456,6 +458,31 @@ void esbSendTxPacket()
 {
   txq_head = (txq_head+1)%TXQ_LEN;
 }
+
+void esbSendP2PPacket(uint8_t port, uint8_t *data, uint8_t length)
+{
+  static EsbPacket p2pPacket;
+
+  p2pPacket.size = length +2;
+  p2pPacket.ack = 0;
+  p2pPacket.data[0]= 0xff;
+  p2pPacket.data[1] = 0x80|(port&0x0f);
+
+  memcpy(p2pPacket.data+2, data, sizeof(uint8_t)*length);
+
+  // Message pointer to Nrf radio
+  NRF_RADIO->PACKETPTR = (uint32_t)&p2pPacket;
+  // The indicator that the message is neither ACKed based or broadcast based, but specifically between drones
+  NRF_RADIO->TXADDRESS = 0x01UL;
+  // Put NRF_Radio to TX mode
+  NRF_RADIO->SHORTS &= ~RADIO_SHORTS_DISABLED_RXEN_Msk;
+  NRF_RADIO->SHORTS |= RADIO_SHORTS_DISABLED_TXEN_Msk;
+  NRF_RADIO->TASKS_DISABLE = 1UL; // By disabling the task, the package is send
+
+  rs = doTx;
+
+}
+
 
 void esbSetDatarate(EsbDatarate dr)
 {
