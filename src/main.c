@@ -151,12 +151,22 @@ void mainloop()
   bool slReceived;
   static int vbatSendTime;
 	static int radioRSSISendTime;
+    static int radioP2PSendTime;
+
 	static uint8_t rssi;
   static bool broadcast;
   static bool p2p;
 
   while(1)
   {
+      if (systickGetTick() >= radioP2PSendTime + 1000) {
+          radioP2PSendTime = systickGetTick();
+          static struct syslinkPacket dummy;
+          esbSendP2PPacket(0x00,"hello",5);
+
+      }
+
+
 
 #ifdef BLE
     if ((esbReceived == false) && bleCrazyfliesIsPacketReceived()) {
@@ -180,6 +190,7 @@ void mainloop()
       // If the packet is a null packet with data[1] == 0x8*, it is a P2P packet
       if (packet->size >= 2 && (packet->data[0] & 0xf3) == 0xf3 && (packet->data[1] & 0xF0) == 0x80) {
         p2p = true;
+        esbRxPacket.rssi = packet->rssi;
       } else {
         p2p = false;
       }
