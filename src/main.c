@@ -215,8 +215,9 @@ void mainloop()
         } else {
           // The first byte sent is the P2P port
           slTxPacket.data[0] = packet->data[1] & 0x0F;
-          memcpy(&slTxPacket.data[1], &packet->data[2], packet->size-2);
-          slTxPacket.length = packet->size-2;
+          slTxPacket.data[1] = packet->rssi;
+          memcpy(&slTxPacket.data[2], &packet->data[2], packet->size-2);
+          slTxPacket.length = packet->size;
           if (broadcast) {
             slTxPacket.type = SYSLINK_RADIO_P2P_BROADCAST;
           } else {
