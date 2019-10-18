@@ -37,8 +37,8 @@
 #include <nrf_soc.h>
 #endif
 
-#define RXQ_LEN 16
-#define TXQ_LEN 16
+#define RXQ_LEN 8
+#define TXQ_LEN 8
 
 static bool isInit = true;
 
@@ -459,10 +459,8 @@ void esbSendTxPacket()
   txq_head = (txq_head+1)%TXQ_LEN;
 }
 
-void esbSendP2PPacket(uint8_t port, uint8_t *data, uint8_t length)
+void esbSendP2PPacket(uint8_t port, char *data, uint8_t length)
 {
-  static EsbPacket p2pPacket;
-
   p2pPacket.size = length + 2;
   p2pPacket.ack = 0;
   p2pPacket.data[0]= 0xff;
