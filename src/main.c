@@ -327,7 +327,7 @@ void mainloop()
           }
           break;
         case SYSLINK_RADIO_P2P_BROADCAST:
-          esbSendP2PPacket(slRxPacket.data[0],slRxPacket.data,slRxPacket.length-1);
+          esbSendP2PPacket(slRxPacket.data[0],&slRxPacket.data[1],slRxPacket.length-1);
           break;
 
       }

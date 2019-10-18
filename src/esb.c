@@ -306,7 +306,7 @@ void esbInterruptHandler()
 // Don't use any extra added length besides the length field when sending
 #define PACKET1_STATIC_LENGTH            (0UL)
 // Max payload allowed in a packet
-#define PACKET1_PAYLOAD_SIZE             (32UL)
+#define PACKET1_PAYLOAD_SIZE             (63UL)
 
 void esbInit()
 {
@@ -463,13 +463,12 @@ void esbSendP2PPacket(uint8_t port, uint8_t *data, uint8_t length)
 {
   static EsbPacket p2pPacket;
 
-  p2pPacket.size = length +2;
+  p2pPacket.size = length + 2;
   p2pPacket.ack = 0;
   p2pPacket.data[0]= 0xff;
   p2pPacket.data[1] = 0x80|(port&0x0f);
 
-  memcpy(p2pPacket.data+2, data, sizeof(uint8_t)*length);
-
+  memcpy(&p2pPacket.data[2], data, sizeof(uint8_t)*length);
   // Message pointer to Nrf radio
   NRF_RADIO->PACKETPTR = (uint32_t)&p2pPacket;
   // The indicator that the message is neither ACKed based or broadcast based, but specifically between drones
