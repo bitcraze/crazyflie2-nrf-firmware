@@ -85,6 +85,8 @@ bool esbCanTxPacket();
 
 /* Return the address of the next TX packet in the TX queue */
 EsbPacket * esbGetTxPacket();
+
+/* Immediately send a peer 2 peer packet in TX */
 void esbSendP2PPacket(uint8_t port, char *data, uint8_t length);
 
 /* Release and set for sending the buffer returned by getTxPacket */
