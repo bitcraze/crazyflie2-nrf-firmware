@@ -150,8 +150,8 @@ void mainloop()
   bool esbReceived = false;
   bool slReceived;
   static int vbatSendTime;
-	static int radioRSSISendTime;
-	static uint8_t rssi;
+  static int radioRSSISendTime;
+  static uint8_t rssi;
   static bool broadcast;
   static bool p2p;
 
@@ -174,12 +174,14 @@ void mainloop()
     {
       EsbPacket* packet = esbGetRxPacket();
       //Store RSSI here so that we can send it to STM later
+      // Todo investigate if we can not just simply link this to the packet itself or find a way to separate this due to P2P
       rssi = packet->rssi;
       // The received packet was a broadcast, if received on local address 1
       broadcast = packet->match == ESB_MULTICAST_ADDRESS_MATCH;
       // If the packet is a null packet with data[1] == 0x8*, it is a P2P packet
       if (packet->size >= 2 && (packet->data[0] & 0xf3) == 0xf3 && (packet->data[1] & 0xF0) == 0x80) {
         p2p = true;
+        esbRxPacket.rssi = packet->rssi;
       } else {
         p2p = false;
       }
@@ -215,16 +217,15 @@ void mainloop()
         } else {
           // The first byte sent is the P2P port
           slTxPacket.data[0] = packet->data[1] & 0x0F;
-          memcpy(&slTxPacket.data[1], &packet->data[2], packet->size-2);
-          slTxPacket.length = packet->size-2;
+          slTxPacket.data[1] = packet->rssi; // Save RSSI between drones in packet
+          memcpy(&slTxPacket.data[2], &packet->data[2], packet->size-2);
+          slTxPacket.length = packet->size;
           if (broadcast) {
             slTxPacket.type = SYSLINK_RADIO_P2P_BROADCAST;
           } else {
             slTxPacket.type = SYSLINK_RADIO_P2P;
           }
         }
-        
-
         syslinkSend(&slTxPacket);
       }
     }
@@ -325,7 +326,8 @@ void mainloop()
           }
           break;
         case SYSLINK_RADIO_P2P_BROADCAST:
-          esbSendP2PPacket(slRxPacket.data[0],slRxPacket.data,slRxPacket.length-1);
+          // Send the P2P packet immediately without buffer
+          esbSendP2PPacket(slRxPacket.data[0],&slRxPacket.data[1],slRxPacket.length-1);
           break;
 
       }

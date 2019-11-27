@@ -41,7 +41,7 @@ typedef struct esbPacket_s {
         uint8_t pid :2;
       };
     };
-    uint8_t data[32];
+    uint8_t data[63];
   } __attribute__((packed));
   /* Written by the radio interrupt routine */
   /* Since the value of the RSSI sample can only be between ~[0, 100] we down cast
@@ -85,6 +85,9 @@ bool esbCanTxPacket();
 
 /* Return the address of the next TX packet in the TX queue */
 EsbPacket * esbGetTxPacket();
+
+/* Immediately send a peer 2 peer packet in TX */
+void esbSendP2PPacket(uint8_t port, char *data, uint8_t length);
 
 /* Release and set for sending the buffer returned by getTxPacket */
 void esbSendTxPacket();
