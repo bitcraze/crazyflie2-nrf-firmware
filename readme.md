@@ -39,12 +39,14 @@ sudo apt-get install gcc-arm-none-eabi gdb-arm-none-eabi binutils-arm-none-eabi
 Compilation options can be saved in config.mk. Main targets:
 
 ```
-make                 # Make with BLE support
-make BLE=0           # Make without BLE support
-make BLE=0 S110=0    # Make without BLE and without Softdevice in flash (see bellow)
+make                    # Make with BLE support
+make BLE=0              # Make without BLE support
+make BLE=0 S110=0       # Make without BLE and without Softdevice in flash (see bellow)
 
-make flash           # Flash firmware with jtag
-make factory_reset   # Erase device and flash softdevice, bootloaders, and firmware
+make flash              # Flash firmware with jtag
+make factory_reset      # Erase device and flash softdevice, bootloaders, and firmware for Crazyflie 2.0
+make factory_reset_21   # Erase device and flash softdevice, bootloaders, and firmware for Crazyflie 2.1
+                        # The Crazyflie 2.1 needs to be powered by battery only for this to work
 ```
 
 Architecture

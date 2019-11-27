@@ -21,7 +21,7 @@ GDB=$(CROSS_COMPILE)gdb
 OPENOCD           ?= openocd
 OPENOCD_DIR       ?=
 OPENOCD_INTERFACE ?= $(OPENOCD_DIR)interface/stlink-v2.cfg
-OPENOCD_TARGET    ?= target/nrf51_stlink.tcl
+OPENOCD_TARGET    ?= target/nrf51.cfg
 OPENOCD_CMDS      ?=
 
 
@@ -147,6 +147,17 @@ flash_cload: bootloaders/cload_nrf_v1.0.hex
 	               -c "mww 0x4001e504 0x01" -c "mww 0x10001014 0x3F000" \
 	               -c "mww 0x4001e504 0x01" -c "mww 0x10001080 0x3A000" -c "reset run" -c shutdown
 
+flash_mbs_21: bootloaders/nrf_mbs_cf21.hex
+	$(OPENOCD) -d2 -f $(OPENOCD_INTERFACE) $(OPENOCD_CMDS) -f $(OPENOCD_TARGET) -c init -c targets -c "reset halt" \
+                 -c "flash write_image erase $^" -c "verify_image $^" -c "reset halt" \
+	               -c "mww 0x4001e504 0x01" -c "mww 0x10001014 0x3F000" \
+	               -c "reset run" -c shutdown
+
+flash_cload_21: bootloaders/cload_nrf_cf21.hex
+	$(OPENOCD) -d2 -f $(OPENOCD_INTERFACE) $(OPENOCD_CMDS) -f $(OPENOCD_TARGET) -c init -c targets -c "reset halt" \
+                 -c "flash write_image erase $^" -c "verify_image $^" -c "reset halt" \
+	               -c "mww 0x4001e504 0x01" -c "mww 0x10001014 0x3F000" \
+	               -c "mww 0x4001e504 0x01" -c "mww 0x10001080 0x3A000" -c "reset run" -c shutdown
 
 mass_erase:
 	$(OPENOCD) -d2 -f $(OPENOCD_INTERFACE) $(OPENOCD_CMDS) -f $(OPENOCD_TARGET) -c init -c targets -c "reset halt" \
@@ -183,5 +194,14 @@ ifeq ($(strip $(S110)),1)
 	make flash_s110
 	make flash_mbs
 	make flash_cload
+endif
+	make flash
+
+factory_reset_21:
+	make mass_erase
+ifeq ($(strip $(S110)),1)
+	make flash_s110
+	make flash_mbs_21
+	make flash_cload_21
 endif
 	make flash
