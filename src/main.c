@@ -443,6 +443,8 @@ static void handleRadioCmd(struct esbPacket_s *packet)
 #define BOOTLOADER_CMD_SYSOFF     0x02
 #define BOOTLOADER_CMD_SYSON      0x03
 #define BOOTLOADER_CMD_GETVBAT    0x04
+#define BOOTLOADER_CMD_LED_ON     0x05
+#define BOOTLOADER_CMD_LED_OFF    0x06
 
 static void handleBootloaderCmd(struct esbPacket_s *packet)
 {
@@ -511,6 +513,12 @@ static void handleBootloaderCmd(struct esbPacket_s *packet)
 
         esbSendTxPacket(pk);
       }
+      break;
+    case BOOTLOADER_CMD_LED_ON:
+      LED_ON();
+      break;
+    case BOOTLOADER_CMD_LED_OFF:
+      LED_OFF();
       break;
     default:
       break;
