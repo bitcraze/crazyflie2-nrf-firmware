@@ -39,6 +39,8 @@ float pmGetVBAT(void);
 
 float pmGetISET(void);
 
+float pmGetTemp(void);
+
 void pmProcess();
 
 void pmSetState(PmState newState);

@@ -52,6 +52,7 @@ static ADCState adcState = adcVBAT;
 
 static float vBat;
 static float iSet;
+static float temp;
 
 void pmInit()
 {
@@ -271,6 +272,10 @@ float pmGetISET(void) {
   return iSet;
 }
 
+float pmGetTemp(void) {
+  return temp;
+}
+
 void pmSysBootloader(bool enable)
 {
   systemBootloader = enable;
@@ -313,6 +318,9 @@ void pmProcess() {
     uint16_t rawValue = NRF_ADC->RESULT;
     lastAdcTick = systickGetTick();
 
+    // Start temp read
+    NRF_TEMP->TASKS_START = 1;
+
 	  if (adcState == adcVBAT) {
 		  vBat = (float) (rawValue / 1023.0) * 1.2 * pmConfig->vbatFactor;
 		  if (pmConfig->hasCharger) {
@@ -329,5 +337,22 @@ void pmProcess() {
 	  //TODO: Handle the battery charging...
   }
 
+  // Check that environmental temp is OK for charging
+  if (NRF_TEMP->EVENTS_DATARDY)
+  {
+    temp = (float)(NRF_TEMP->TEMP / 4.0);
+    if (temp < 15.0 || temp > 45.0)
+    {
+      // Disable charging
+      nrf_gpio_pin_set(PM_CHG_EN);
+      LED_OFF();
+    }
+    else
+    {
+      // Enable charging
+      nrf_gpio_pin_clear(PM_CHG_EN);
+      LED_ON();
+    }
+  }
 }
 
