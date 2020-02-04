@@ -338,7 +338,7 @@ void pmProcess() {
   }
 
   // Check that environmental temp is OK for charging
-  if (NRF_TEMP->EVENTS_DATARDY)
+  if (pmConfig->hasCharger && NRF_TEMP->EVENTS_DATARDY)
   {
     temp = (float)(NRF_TEMP->TEMP / 4.0);
     if (temp < 15.0 || temp > 45.0)
