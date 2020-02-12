@@ -47,9 +47,14 @@
 #define START_BYTE1 0xBC
 #define START_BYTE2 0xCF
 
+static enum {state_first_start, state_second_start, state_length, state_type, state_data, state_cksum1, state_cksum2, state_done} state = state_first_start;
+
+void syslinkReset() {
+  state = state_first_start;
+}
+
 bool syslinkReceive(struct syslinkPacket *packet)
 {
-  static enum {state_first_start, state_second_start, state_length, state_type, state_data, state_cksum1, state_cksum2, state_done} state = state_first_start;
   static int step=0;
   static int length=0;
   static uint8_t cksum_a=0, cksum_b=0;

@@ -41,6 +41,7 @@ struct syslinkPacket {
 bool syslinkReceive(struct syslinkPacket *packet);
 
 bool syslinkSend(struct syslinkPacket *packet);
+void syslinkReset();
 
 
 // Defined packet types

@@ -498,6 +498,7 @@ static void handleBootloaderCmd(struct esbPacket_s *packet)
     case BOOTLOADER_CMD_SYSON:
       pmSysBootloader(false);
       pmSetState(pmSysRunning);
+      syslinkReset();
       break;
     case BOOTLOADER_CMD_GETVBAT:
       if (esbCanTxPacket()) {
