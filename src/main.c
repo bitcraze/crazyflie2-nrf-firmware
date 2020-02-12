@@ -74,6 +74,7 @@ static bool boottedFromBootloader;
 static void handleRadioCmd(struct esbPacket_s * packet);
 static void handleBootloaderCmd(struct esbPacket_s *packet);
 
+static int stmStartTime = 0;
 int main()
 {
   // Stop early if the platform is not supported
@@ -334,7 +335,7 @@ void mainloop()
     }
 
     // Wait a while to start pushing over the syslink since UART pins are used to launch STM32 i bootloader as well
-    if (systickGetTick() > SYSLINK_STARTUP_DELAY_TIME_MS) {
+    if (systickGetTick() > (stmStartTime + SYSLINK_STARTUP_DELAY_TIME_MS)) {
       // Send the battery voltage and state to the STM every SYSLINK_SEND_PERIOD_MS
       if (systickGetTick() >= vbatSendTime + SYSLINK_SEND_PERIOD_MS) {
         float fdata;
@@ -498,7 +499,9 @@ static void handleBootloaderCmd(struct esbPacket_s *packet)
     case BOOTLOADER_CMD_SYSON:
       pmSysBootloader(false);
       pmSetState(pmSysRunning);
+      stmStartTime = systickGetTick();
       syslinkReset();
+
       break;
     case BOOTLOADER_CMD_GETVBAT:
       if (esbCanTxPacket()) {
