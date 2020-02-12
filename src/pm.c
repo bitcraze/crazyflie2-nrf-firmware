@@ -25,9 +25,7 @@
 
 #include <nrf.h>
 #include <nrf_gpio.h>
-#ifdef BLE
 #include <nrf_soc.h>
-#endif
 
 #include "pm.h"
 #include "button.h"
@@ -40,6 +38,8 @@
 
 //#define ENABLE_FAST_CHARGE_1A
 //#define RFX2411N_BYPASS_MODE
+
+extern int bleEnabled;
 
 static PmConfig const *pmConfig;
 static PmState state;
@@ -129,11 +129,13 @@ static void pmNrfPower(bool enable)
 
     nrf_gpio_cfg_input(PM_VBAT_SINK_PIN, NRF_GPIO_PIN_NOPULL);
     NRF_POWER->GPREGRET |= 0x01; // Workaround for not being able to determine reset reason...
-#ifdef BLE
-    sd_power_system_off();
-#else
-    NRF_POWER->SYSTEMOFF = 1UL;
-#endif
+
+    if (bleEnabled) {
+      sd_power_system_off();
+    } else {
+      NRF_POWER->SYSTEMOFF = 1UL;
+    }
+
     while(1);
   }
 }
@@ -355,4 +357,3 @@ void pmProcess() {
     }
   }
 }
-

@@ -39,7 +39,8 @@
 static bool isInit;
 static int nMemory;
 
-#ifdef BLE
+extern int bleEnabled;
+
 #define OW_MAX_CACHED 4
 static struct {unsigned char address[8]; unsigned char data[122];} owCache[OW_MAX_CACHED];
 
@@ -50,7 +51,7 @@ static void cacheMemory(int nMem)
     ds28e05ReadMemory(0, 0, owCache[nMem].data, 112);
   }
 }
-#else
+
 static bool selectMemory(int n)
 {
   if (owFirst(0, 1, 0))
@@ -69,7 +70,6 @@ static bool selectMemory(int n)
 
   return false;
 }
-#endif
 
 int owScan()
 {
@@ -80,17 +80,14 @@ int owScan()
 
   if (owFirst(0, 1, 0))
   {
-#ifdef BLE
     cacheMemory(0);
-#endif
     nMem++;
     while(owNext(0, 1, 0))
     {
-#ifdef BLE
-      cacheMemory(nMem);
-      if (nMem>=OW_MAX_CACHED)
-        break;
-#endif
+      if (nMem < OW_MAX_CACHED) {
+        cacheMemory(nMem);
+      }
+
       nMem++;
     }
   }
@@ -119,26 +116,23 @@ bool memorySyslink(struct syslinkPacket *pk) {
 
   switch (pk->type) {
     case SYSLINK_OW_SCAN:
-#ifndef BLE
-      nMemory = owScan();
-#endif
+      if (!bleEnabled) {
+        nMemory = owScan();
+      }
+
       pk->data[0] = nMemory;
       pk->length = 1;
       tx = true;
       break;
     case SYSLINK_OW_GETINFO:
-#ifdef BLE
-      if (command->nmem<nMemory) {
+      if (bleEnabled && command->nmem < nMemory) {
         memcpy(command->info.memId, owCache[command->nmem].address, 8);
         pk->length = 1+8;
         tx = true;
-#else
-      if (selectMemory(command->nmem))
-      {
+      } else if (!bleEnabled && selectMemory(command->nmem)) {
         owSerialNum(0, command->info.memId, 1);
         pk->length = 1+8;
         tx = true;
-#endif
       } else {
         //Cannot select the memory
         pk->data[0] = -1;
@@ -148,18 +142,15 @@ bool memorySyslink(struct syslinkPacket *pk) {
       break;
 
     case SYSLINK_OW_READ:
-#ifdef BLE
-      if (command->nmem<nMemory) {
+      if (bleEnabled && command->nmem<nMemory) {
         memcpy(command->read.data, &owCache[command->nmem].data[command->read.address], 29);
         pk->length = 32;
         tx=true;
-#else
-      if (selectMemory(command->nmem) &&
-          ds28e05ReadMemory(0, command->read.address, command->read.data, 29))
-      {
+
+      } else if (!bleEnabled && selectMemory(command->nmem) &&
+          ds28e05ReadMemory(0, command->read.address, command->read.data, 29)) {
         pk->length = 32;
         tx=true;
-#endif
       } else {
         //Cannot select the memory
         pk->data[0] = -1;
@@ -169,23 +160,22 @@ bool memorySyslink(struct syslinkPacket *pk) {
 
       break;
     case SYSLINK_OW_WRITE:
-#ifdef BLE
-      //Cannot currently write the memory when compiled with BLE
-      pk->data[0] = -2;
-      pk->length = 1;
-      tx=true;
-#else
-      if (selectMemory(command->nmem) &&
-          ds28e05WriteMemory(0, command->write.address, command->write.data, command->write.length))
-      {
-        tx=true;
-      } else {
-        //Cannot select the memory
-        pk->data[0] = -1;
+      if (bleEnabled) {
+        //Cannot currently write the memory when compiled with BLE
+        pk->data[0] = -2;
         pk->length = 1;
         tx=true;
+      } else {
+        if (selectMemory(command->nmem) &&
+            ds28e05WriteMemory(0, command->write.address, command->write.data, command->write.length)) {
+          tx=true;
+        } else {
+          //Cannot select the memory
+          pk->data[0] = -1;
+          pk->length = 1;
+          tx=true;
+        }
       }
-#endif
       break;
   }
 

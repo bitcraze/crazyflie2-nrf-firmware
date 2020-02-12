@@ -32,13 +32,13 @@
 
 #include <nrf.h>
 
-#ifdef BLE
 #include <ble_gap.h>
 #include <nrf_soc.h>
-#endif
 
 #define RXQ_LEN 8
 #define TXQ_LEN 8
+
+extern int bleEnabled;
 
 static bool isInit = true;
 
@@ -312,12 +312,12 @@ void esbInit()
 {
   NRF_RADIO->POWER = 1;
   // Enable Radio interrupts
-#ifndef BLE
-  NVIC_SetPriority(RADIO_IRQn, 3);
-  NVIC_EnableIRQ(RADIO_IRQn);
-#else
-  NVIC_EnableIRQ(RADIO_IRQn);
-#endif
+  if (!bleEnabled) {
+    NVIC_SetPriority(RADIO_IRQn, 3);
+    NVIC_EnableIRQ(RADIO_IRQn);
+  } else {
+    NVIC_EnableIRQ(RADIO_IRQn);
+  }
 
 
   NRF_RADIO->TXPOWER = (txpower << RADIO_TXPOWER_TXPOWER_Pos);
@@ -392,24 +392,27 @@ void esbInit()
 void esbReset()
 {
   if (!isInit) return;
-#ifndef BLE
-  __disable_irq();
-#endif
+
+  if (!bleEnabled) {
+    __disable_irq();
+  }
+
   NRF_RADIO->TASKS_DISABLE = 1;
   NRF_RADIO->POWER = 0;
 
   NVIC_GetPendingIRQ(RADIO_IRQn);
   __enable_irq();
-#ifndef BLE
-  esbInit();
-#endif
+
+  if (!bleEnabled) {
+    esbInit();
+  }
 }
 
 void esbDeinit()
 {
-#ifndef BLE
-  NVIC_DisableIRQ(RADIO_IRQn);
-#endif
+  if (!bleEnabled) {
+    NVIC_DisableIRQ(RADIO_IRQn);
+  }
 
   NRF_RADIO->INTENCLR = RADIO_INTENSET_END_Msk;
   NRF_RADIO->SHORTS = 0;
@@ -496,13 +499,13 @@ void esbSetContwave(bool enable)
 {
   contwave = enable;
 
-#ifdef BLE
-  if (enable)
-    ble_advertising_stop();
-  else
-    advertising_start();
-#endif
-
+  if (bleEnabled) {
+    if (enable) {
+      ble_advertising_stop();
+    } else {
+      advertising_start();
+    }
+  }
 
   esbReset();
 }

@@ -55,6 +55,7 @@ endif
 
 ifeq ($(strip $(BLE)), 1)
 CFLAGS += -DBLE=1
+endif
 
 OBJS += src/ble/ble.o
 OBJS += src/ble/ble_crazyflies.o
@@ -80,7 +81,6 @@ CFLAGS += -I$(NRF_S110)/Include/
 CFLAGS += -I$(NRF51_SDK)/Include/app_common/
 CFLAGS += -I$(NRF51_SDK)/Include/sd_common/
 CFLAGS += -I$(NRF51_SDK)/Include/sdk/
-endif
 
 OBJS += src/main.o gcc_startup_nrf51.o system_nrf51.o src/uart.o \
         src/syslink.o src/pm.o src/systick.o src/button.o src/swd.o src/ow.o \

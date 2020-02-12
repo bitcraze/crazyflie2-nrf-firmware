@@ -23,9 +23,7 @@
  */
 #include <nrf.h>
 
-#ifdef BLE
-#include <nrf_soc.h>
-#endif
+
 
 #include <stdio.h>
 #include <string.h>
@@ -41,13 +39,14 @@
 #include "pm.h"
 #include "pinout.h"
 #include "systick.h"
+#include "nrf_sdm.h"
+#include "nrf_soc.h"
 
 #include "memory.h"
 #include "ownet.h"
 
-#ifdef BLE
 #include "ble_crazyflies.h"
-#endif
+
 
 extern void  initialise_monitor_handles(void);
 extern int ble_init(void);
@@ -69,10 +68,17 @@ static void mainloop(void);
 #undef BLE
 #endif
 
+#ifdef BLE
+int bleEnabled = 1;
+#else
+int bleEnabled = 0;
+#endif
+
 static bool boottedFromBootloader;
 
 static void handleRadioCmd(struct esbPacket_s * packet);
 static void handleBootloaderCmd(struct esbPacket_s *packet);
+static void disableBle();
 
 static int stmStartTime = 0;
 int main()
@@ -86,12 +92,12 @@ int main()
   systickInit();
   memoryInit();
 
-#ifdef BLE
-  ble_init();
-#else
-  NRF_CLOCK->TASKS_HFCLKSTART = 1UL;
-  while(!NRF_CLOCK->EVENTS_HFCLKSTARTED);
-#endif
+  if (bleEnabled) {
+    ble_init();
+  } else {
+    NRF_CLOCK->TASKS_HFCLKSTART = 1UL;
+    while(!NRF_CLOCK->EVENTS_HFCLKSTARTED);
+  }
 
 #ifdef SEMIHOSTING
   initialise_monitor_handles();
@@ -125,12 +131,12 @@ int main()
 
   NRF_GPIO->PIN_CNF[RADIO_PAEN_PIN] |= GPIO_PIN_CNF_DIR_Output | (GPIO_PIN_CNF_DRIVE_S0H1<<GPIO_PIN_CNF_DRIVE_Pos);
 
-#ifndef BLE
-  esbInit();
+  if (!bleEnabled) {
+    esbInit();
 
-  esbSetDatarate(DEFAULT_RADIO_RATE);
-  esbSetChannel(DEFAULT_RADIO_CHANNEL);
-#endif
+    esbSetDatarate(DEFAULT_RADIO_RATE);
+    esbSetChannel(DEFAULT_RADIO_CHANNEL);
+  }
 
   DEBUG_PRINT("Started\n");
 
@@ -159,16 +165,16 @@ void mainloop()
   while(1)
   {
 
-#ifdef BLE
-    if ((esbReceived == false) && bleCrazyfliesIsPacketReceived()) {
-      EsbPacket* packet = bleCrazyfliesGetRxPacket();
-      memcpy(esbRxPacket.data, packet->data, packet->size);
-      esbRxPacket.size = packet->size;
-      esbReceived = true;
-      bleCrazyfliesReleaseRxPacket(packet);
+    if (bleEnabled) {
+      if ((esbReceived == false) && bleCrazyfliesIsPacketReceived()) {
+        EsbPacket* packet = bleCrazyfliesGetRxPacket();
+        memcpy(esbRxPacket.data, packet->data, packet->size);
+        esbRxPacket.size = packet->size;
+        esbReceived = true;
+        bleCrazyfliesReleaseRxPacket(packet);
+      }
     }
 
-#endif
 #ifndef CONT_WAVE_TEST
 
     if ((esbReceived == false) && esbIsRxPacket())
@@ -190,6 +196,8 @@ void mainloop()
       esbRxPacket.size = packet->size;
       esbReceived = true;
       esbReleaseRxPacket(packet);
+
+      disableBle();
     }
 
     if (esbReceived)
@@ -249,14 +257,15 @@ void mainloop()
             }
             bzero(slRxPacket.data, SYSLINK_MTU);
           }
-#ifdef BLE
-          if (slRxPacket.length < SYSLINK_MTU) {
-            static EsbPacket pk;
-            memcpy(pk.data,  slRxPacket.data, slRxPacket.length);
-            pk.size = slRxPacket.length;
-            bleCrazyfliesSendPacket(&pk);
+
+          if (bleEnabled) {
+            if (slRxPacket.length < SYSLINK_MTU) {
+              static EsbPacket pk;
+              memcpy(pk.data,  slRxPacket.data, slRxPacket.length);
+              pk.size = slRxPacket.length;
+              bleCrazyfliesSendPacket(&pk);
+            }
           }
-#endif
 
           break;
         case SYSLINK_RADIO_CHANNEL:
@@ -464,9 +473,10 @@ static void handleBootloaderCmd(struct esbPacket_s *packet)
       memcpy(&(txpk.data[3]), (uint32_t*)NRF_FICR->DEVICEADDR, 6);
 
       txpk.size = 9;
-#if BLE
-      bleCrazyfliesSendPacket(&txpk);
-#endif
+      if (bleEnabled) {
+        bleCrazyfliesSendPacket(&txpk);
+      }
+
       if (esbCanTxPacket()) {
         struct esbPacket_s *pk = esbGetTxPacket();
         memcpy(pk, &txpk, sizeof(struct esbPacket_s));
@@ -483,11 +493,11 @@ static void handleBootloaderCmd(struct esbPacket_s *packet)
           //Set bit 0x20 forces boot to firmware
           NRF_POWER->GPREGRET |= 0x20U;
         }
-#ifdef BLE
-        sd_nvic_SystemReset();
-#else
-        NVIC_SystemReset();
-#endif
+        if (bleEnabled) {
+          sd_nvic_SystemReset();
+        } else {
+          NVIC_SystemReset();
+        }
       }
       break;
     case BOOTLOADER_CMD_ALLOFF:
@@ -526,5 +536,13 @@ static void handleBootloaderCmd(struct esbPacket_s *packet)
       break;
     default:
       break;
+  }
+}
+
+static void disableBle() {
+  if (bleEnabled) {
+      sd_softdevice_disable();
+      bleEnabled = 0;
+      esbInit();
   }
 }

@@ -40,11 +40,8 @@
 
 #include "ble_crazyflies.h"
 
-
-#if BLE
 #if S110==0
 #error S110 shall be used when using BLE
-#endif
 #endif
 
 #define DEVICE_NAME                          "Crazyflie"                              /**< Name of device. Will be included in the advertising data. */
