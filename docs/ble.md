@@ -12,6 +12,8 @@ CRTP ports are used (ie. Commander, Log, Param). BLE services are
 implemented in the NRF51, therefore it is possible to implement more
 services.
 
+**Note**: If the NRF receives any other type of package that is not BLE communication, like crazyradio, OW rewrite or even radio address scanning, the BLE will be __disabled__. The Crazyflie will need to be restarted in order for the Bluetooth to be enabled again.
+
 Crazyflie service
 -----------------
 
