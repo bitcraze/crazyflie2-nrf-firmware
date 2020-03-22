@@ -2,7 +2,10 @@
 - title: Building and Flashing
   subs:
     - {page_id: build_flash}
-- title: Explanation Functionalities
+- title: Development
+  subs:
+    - {page_id: starting_development}
+- title: Protocols
   subs:
     - {page_id: syslink}
     - {page_id: ble}

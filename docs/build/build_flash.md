@@ -1,6 +1,6 @@
 ---
-title: Building and Flashing instructions
-page_id: build_flash 
+title: Building and Flashing
+page_id: build_flash
 ---
 
 
