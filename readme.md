@@ -43,13 +43,15 @@ make                    # Make with BLE support
 make BLE=0              # Make without BLE support
 make BLE=0 S110=0       # Make without BLE and without Softdevice in flash (see bellow)
 
+make CLOAD              # Flash firmware over radio 
+
 make flash              # Flash firmware with jtag
 make factory_reset      # Erase device and flash softdevice, bootloaders, and firmware for Crazyflie 2.0
 make factory_reset_21   # Erase device and flash softdevice, bootloaders, and firmware for Crazyflie 2.1
                         # The Crazyflie 2.1 needs to be powered by battery only for this to work
 ```
 
-Architecture
+Architecture            
 ------------
 
 When running without softdevice (S110=0) the firmware is loaded at the
