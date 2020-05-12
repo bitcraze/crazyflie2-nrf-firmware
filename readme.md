@@ -18,6 +18,8 @@ will download the zips and unpack them.
 If you want to download manually from the Nordic semiconductor website, you
 will find the details in nrf51_sdk/readme and s110/readme.
 
+For more information, check out the [Bitcraze documentation](https://www.bitcraze.io/documentation/repository/crazyflie2-nrf-firmware/master/)
+
 License
 -------
 
