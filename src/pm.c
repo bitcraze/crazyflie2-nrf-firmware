@@ -36,6 +36,14 @@
 
 #define TICK_BETWEEN_STATE 2
 
+/**
+ * The max and min temp to charge. Since we are using nrf inbuilt temp sensor and
+ * the board heat it the reading is at least 10-15 deg too warm.
+ */
+#define PM_CHARGE_MIN_TEMP  (15.0)
+#define PM_CHARGE_MAX_TEMP  (60.0)
+#define PM_CHARE_HYSTERESIS (1.0)
+
 //#define ENABLE_FAST_CHARGE_1A
 //#define RFX2411N_BYPASS_MODE
 
@@ -339,21 +347,24 @@ void pmProcess() {
 	  //TODO: Handle the battery charging...
   }
 
+#ifndef DISABLE_CHARGE_TEMP_CONTROL
   // Check that environmental temp is OK for charging
   if (pmConfig->hasCharger && NRF_TEMP->EVENTS_DATARDY)
   {
     temp = (float)(NRF_TEMP->TEMP / 4.0);
-    if (temp < 15.0 || temp > 45.0)
+    if (temp < PM_CHARGE_MIN_TEMP || temp > PM_CHARGE_MAX_TEMP)
     {
       // Disable charging
       nrf_gpio_pin_set(PM_CHG_EN);
       LED_OFF();
     }
-    else
+    else if (temp > PM_CHARGE_MIN_TEMP + PM_CHARE_HYSTERESIS  &&
+             temp < PM_CHARGE_MAX_TEMP - PM_CHARE_HYSTERESIS)
     {
       // Enable charging
       nrf_gpio_pin_clear(PM_CHG_EN);
       LED_ON();
     }
   }
+#endif
 }

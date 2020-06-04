@@ -47,7 +47,6 @@
 
 #include "ble_crazyflies.h"
 
-
 extern void  initialise_monitor_handles(void);
 extern int ble_init(void);
 
@@ -365,6 +364,11 @@ void mainloop()
         fdata = pmGetISET();
         memcpy(slTxPacket.data+1+4, &fdata, sizeof(float));
 
+#ifdef PM_SYSLINK_INCLUDE_TEMP
+        fdata = pmGetTemp();
+        slTxPacket.length += 4;
+        memcpy(slTxPacket.data+1+8, &fdata, sizeof(float));
+#endif
         syslinkSend(&slTxPacket);
       }
       //Send an RSSI sample to the STM every 10ms(100Hz)
