@@ -227,10 +227,10 @@ void esbInterruptHandler()
         return;
       }
 
-      // Ack Bootloader packets right away with empty ack
+      // Ack Bootloader packets right away with regular ack
       if (pk->match == ESB_UNICAST_ADDRESS_MATCH &&
           pk->size >= 2 && (pk->data[0] & 0xf3) == 0xf3 && pk->data[1] == 0xfe) {
-        setupTx(false, true);
+        setupTx(false, false);
 
         // Push the queue head to push this packet and prepare the next
         // The main loop will recognize it as a bootloader packet
