@@ -45,7 +45,7 @@ make                    # Make with BLE support
 make BLE=0              # Make without BLE support
 make BLE=0 S110=0       # Make without BLE and without Softdevice in flash (see bellow)
 
-make CLOAD              # Flash firmware over radio 
+make cload              # Flash firmware over radio 
 
 make flash              # Flash firmware with jtag
 make factory_reset      # Erase device and flash softdevice, bootloaders, and firmware for Crazyflie 2.0
