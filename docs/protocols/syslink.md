@@ -1,6 +1,6 @@
 ---
 title: Syslink protocol
-page_id: syslink 
+page_id: syslink
 ---
 
 
@@ -142,7 +142,7 @@ goes in deep sleep.
 -   **Type**: 0x13
 -   **Format**:
 
-![syslink battery state](/images/syslink.png)
+![syslink battery state](/docs/images/syslink.png)
 
 -   **Flags**: Bit0: Charging. Bit1: USB Powered.
 -   **VBAT**: IEEE single float. Battery voltage.
