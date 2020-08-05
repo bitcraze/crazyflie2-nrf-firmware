@@ -13,7 +13,7 @@ root="${scriptDir}/../.."
 sdkDir=${root}/nrf51_sdk
 sdkZip=${sdkDir}/nrf51_sdk_v6_1_0_b2ec2e6.zip
 if [ ! -f ${sdkZip} ]; then
-    $(${download_cmd} ${sdkZip} http://developer.nordicsemi.com/nRF51_SDK/nRF51_SDK_v6.x.x/nrf51_sdk_v6_1_0_b2ec2e6.zip)
+    $(${download_cmd} ${sdkZip} https://developer.nordicsemi.com/nRF51_SDK/nRF51_SDK_v6.x.x/nrf51_sdk_v6_1_0_b2ec2e6.zip)
     unzip -q ${sdkZip} -d ${sdkDir}
 fi
 
