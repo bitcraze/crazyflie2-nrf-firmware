@@ -34,8 +34,6 @@
 #include "uart.h"
 #include "platform.h"
 
-#define TICK_BETWEEN_STATE 2
-
 /**
  * The max and min temp to charge. Since we are using nrf inbuilt temp sensor and
  * the board heat it the reading is at least 10-15 deg too warm.
@@ -145,6 +143,8 @@ static void pmNrfPower(bool enable)
     }
 
     while(1);
+  } else {
+    nrf_gpio_pin_clear(PM_VCCEN_PIN);
   }
 }
 
@@ -294,19 +294,23 @@ void pmSysBootloader(bool enable)
 /* Defines all the power states for easy-usage by a generic state machine */
 const struct {
   void (*call)(bool enable);
+  int delay;
+  int delayUp
 } statesFunctions[] = {
-  [pmAllOff] =       { .call = pmDummy },
-  [pmSysOff] =       { .call = pmNrfPower },
-  [pmSysPowered] =   { .call = pmPowerSystem },
-  [pmSysBootSetup] = { .call = pmSysBoot },
-  [pmSysRunning] =   { .call = pmRunSystem },
+  [pmAllOff] =       { .call = pmDummy ,      .delay = 2, .delayUp = 2},
+  [pmSysOff] =       { .call = pmNrfPower,    .delay = 2, .delayUp = 200},
+  [pmSysPowered] =   { .call = pmPowerSystem, .delay = 2, .delayUp = 2},
+  [pmSysBootSetup] = { .call = pmSysBoot,     .delay = 2, .delayUp = 2},
+  [pmSysRunning] =   { .call = pmRunSystem,   .delay = 2, .delayUp = 2},
 };
 
 void pmProcess() {
   static int lastTick = 0;
   static int lastAdcTick = 0;
 
-  if (systickGetTick() - lastTick > TICK_BETWEEN_STATE) {
+  int delay = (targetState>state)?statesFunctions[state].delayUp:statesFunctions[state].delay;
+
+  if (systickGetTick() - lastTick > delay) {
     lastTick = systickGetTick();
 
     if (targetState > state) {
