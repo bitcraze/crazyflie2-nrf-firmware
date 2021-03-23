@@ -31,7 +31,7 @@ NRF_S110 ?= s110
 INCLUDES= -I Include -I Include/gcc -Iinterface
 
 #CONFIG = -DRSSI_ACK_PACKET
-BUILD_OPTION = -g3 -O0 -Wall -fsingle-precision-constant -ffast-math -std=gnu11
+BUILD_OPTION = -g3 -O0 -Wall -Werror -fsingle-precision-constant -ffast-math -std=gnu11
 PERSONAL_DEFINES ?=
 
 PROCESSOR = -mcpu=cortex-m0 -mthumb
