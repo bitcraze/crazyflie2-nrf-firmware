@@ -295,7 +295,7 @@ void pmSysBootloader(bool enable)
 const struct {
   void (*call)(bool enable);
   int delay;
-  int delayUp
+  int delayUp;
 } statesFunctions[] = {
   [pmAllOff] =       { .call = pmDummy ,      .delay = 2, .delayUp = 2},
   [pmSysOff] =       { .call = pmNrfPower,    .delay = 2, .delayUp = 200},
