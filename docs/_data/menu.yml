@@ -5,6 +5,7 @@
 - title: Development
   subs:
     - {page_id: starting_development}
+    - {page_id: architecture}
 - title: Protocols
   subs:
     - {page_id: syslink}

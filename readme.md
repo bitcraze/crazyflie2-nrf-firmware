@@ -10,7 +10,7 @@ This microcontroller have a couple of roles:
 
 ## Installation instructions
 
-See the [installation instructions](docs/build/build.md) in the github docs folder.
+See the [building and flashing instructions](docs/build/build.md) in the github docs folder.
 
 ## Documentation
 
