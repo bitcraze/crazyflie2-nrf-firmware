@@ -3,6 +3,9 @@ title: Building and Flashing
 page_id: build
 ---
 
+Get Bluetooth dependencies
+---------
+
 Compiling with bluetooth support requires the nRF51_SDK and S110 packages.
 
 ```
