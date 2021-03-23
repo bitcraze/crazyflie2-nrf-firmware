@@ -94,23 +94,6 @@ static uint32_t bytewise_bitswap(uint32_t inp)
 
 /* Radio protocol implementation */
 
-static bool isRetry(EsbPacket *pk)
-{
-  static int prevPid;
-  static int prevCrc;
-
-  bool retry = false;
-
-  if ((prevPid == pk->pid) && (prevCrc == pk->crc)) {
-    retry = true;
-  }
-
-  prevPid = pk->pid;
-  prevCrc = pk->crc;
-
-  return retry;
-}
-
 // Handles the queue
 static void setupTx(bool retry, bool empty)
 {
@@ -235,12 +218,6 @@ void esbInterruptHandler()
         // Push the queue head to push this packet and prepare the next
         // The main loop will recognize it as a bootloader packet
         rxq_head = ((rxq_head+1)%RXQ_LEN);
-        return;
-      }
-
-      // If this packet is a retry, send the same ACK again
-      if ((pk->match == ESB_UNICAST_ADDRESS_MATCH) && isRetry(pk)) {
-        setupTx(true, false);
         return;
       }
 
