@@ -8,13 +8,13 @@ This microcontroller have a couple of roles:
    - Bluetooth low energy using the Nordic Semiconductor S110 stack
  - One-wire memory access
 
-## Installation instructions
+## Building and Flashing
 
 See the [building and flashing instructions](docs/build/build.md) in the github docs folder.
 
-## Documentation
+## Official Documentation
 
-Check out the [Bitcraze documentation](https://www.bitcraze.io/documentation/repository/crazyflie2-nrf-firmware/master/) on our website.
+Check out the [Bitcraze crazyflie2-nrf-firmware documentation](https://www.bitcraze.io/documentation/repository/crazyflie2-nrf-firmware/master/) on our website.
 
 ## License
 
