@@ -298,7 +298,7 @@ const struct {
   int delayUp;
 } statesFunctions[] = {
   [pmAllOff] =       { .call = pmDummy ,      .delay = 2, .delayUp = 2},
-  [pmSysOff] =       { .call = pmNrfPower,    .delay = 2, .delayUp = 200},
+  [pmSysOff] =       { .call = pmNrfPower,    .delay = 2, .delayUp = 350},
   [pmSysPowered] =   { .call = pmPowerSystem, .delay = 2, .delayUp = 2},
   [pmSysBootSetup] = { .call = pmSysBoot,     .delay = 2, .delayUp = 2},
   [pmSysRunning] =   { .call = pmRunSystem,   .delay = 2, .delayUp = 2},
