@@ -118,6 +118,22 @@ $(PROGRAM).bin: $(PROGRAM).elf
 $(PROGRAM).elf: $(OBJS)
 	$(LD) $(LDFLAGS) -o $@ $^
 
+# The '|' denotes Include/version.h as an order-only prerequisite, it will not
+# force a rebuild the file is updated, but makes sure that the file exists
+# before we start generating the object files.
+$(OBJS): | Include/version.h
+
+# Dummy target to force re-generation of version.h eacn run.
+#
+# If a rule has no prerequisites or recipe, and the target of the rule is a
+# nonexistent file, then make imagines this target to have been updated
+# whenever its rule is run. This implies that all targets depending on this one
+# will always have their recipe run.
+FORCE:
+
+Include/version.h: FORCE
+	python3 tools/build/generateVersionHeader.py --crazyflie-base $(abspath .) --output $@
+
 clean:
 	rm -f $(PROGRAM).bin $(PROGRAM).elf $(OBJS)
 
