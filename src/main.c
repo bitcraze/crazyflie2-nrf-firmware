@@ -41,6 +41,7 @@
 #include "systick.h"
 #include "nrf_sdm.h"
 #include "nrf_soc.h"
+#include "version.h"
 
 #include "memory.h"
 #include "ownet.h"
@@ -338,7 +339,21 @@ void mainloop()
           // Send the P2P packet immediately without buffer
           esbSendP2PPacket(slRxPacket.data[0],&slRxPacket.data[1],slRxPacket.length-1);
           break;
+        case SYSLINK_SYS_NRF_VERSION:{
+          size_t len = strlen(V_STAG);
+          slTxPacket.type = SYSLINK_SYS_NRF_VERSION;
 
+          memcpy(&slTxPacket.data[0], V_STAG, len);
+
+          if (V_MODIFIED) {
+            slTxPacket.data[len] = '*';
+            len += 1;
+          }
+
+          slTxPacket.data[len] = '\0';
+          slTxPacket.length = len + 1;
+          syslinkSend(&slTxPacket);
+        } break;
       }
     }
 
