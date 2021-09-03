@@ -71,6 +71,8 @@ void syslinkReset();
 #define SYSLINK_OW_READ 0x22
 #define SYSLINK_OW_WRITE 0x23
 
-#define SYSLINK_SYS_NRF_VERSION 0x30
+#define SYSLINK_SYS_NRF_VERSION      0x30
+#define SYSLINK_SYS_SHUTDOWN_REQUEST 0x31
+#define SYSLINK_SYS_SHUTDOWN_ACK     0x32
 
 #endif
