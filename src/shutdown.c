@@ -30,7 +30,7 @@
 #define TIMEOUT_TICKS 1000 // 100 ms
 
 static enum {
-  NothingTodo = 0,
+  nothingTodo = 0,
   shutdownRequested,
   shutdownApproved,
 } state;
@@ -40,7 +40,7 @@ static unsigned int requestSentTicks;
 void shutdownSendRequest()
 {
   struct syslinkPacket slTxPacket = {
-    .type = SYSLINK_SYS_SHUTDOWN_REQUEST,
+    .type = SYSLINK_PM_SHUTDOWN_REQUEST,
   };
 
   if (state == shutdownRequested) {
@@ -64,21 +64,20 @@ void shutdownReceivedAck()
 
 void shutdownProcess()
 {
-  if (state == NothingTodo) {
-    return;
-  }
+  switch (state)
+  {
+    case nothingTodo: break;
 
-  if (state == shutdownApproved) {
-    pmSetState(pmAllOff);
-    state = NothingTodo;
-    return;
-  }
+    case shutdownApproved:
+      pmSetState(pmAllOff);
+      state = nothingTodo;
+      break;
 
-  // state == shutdownRequested
-
-  // if we do not get any response in TIMEOUT_TICKS time, we shutdown
-  if ((systickGetTick() - requestSentTicks) > TIMEOUT_TICKS) {
-    pmSetState(pmAllOff);
-    state = NothingTodo;
+    case shutdownRequested:
+      if ((systickGetTick() - requestSentTicks) > TIMEOUT_TICKS) {
+        pmSetState(pmAllOff);
+        state = nothingTodo;
+      }
+      break;
   }
 }

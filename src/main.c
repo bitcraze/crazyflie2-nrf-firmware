@@ -356,7 +356,7 @@ void mainloop()
           syslinkSend(&slTxPacket);
         } break;
 
-        case SYSLINK_SYS_SHUTDOWN_ACK:
+        case SYSLINK_PM_SHUTDOWN_ACK:
           shutdownReceivedAck();
           break;
       }
