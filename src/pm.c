@@ -78,11 +78,11 @@ void pmInit()
 }
 
 bool pmUSBPower(void) {
-	return nrf_gpio_pin_read(PM_PGOOD_PIN) == 0;
+	return pmConfig->hasCharger ? nrf_gpio_pin_read(PM_PGOOD_PIN) == 0 : 0;
 }
 
 bool pmIsCharging(void) {
-  return nrf_gpio_pin_read(PM_CHG_PIN) == 0;
+  return pmConfig->hasCharger ? nrf_gpio_pin_read(PM_CHG_PIN) == 0 : 0;
 }
 
 /*ChgState chgState(void) {
