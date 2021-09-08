@@ -42,6 +42,7 @@
 #include "nrf_sdm.h"
 #include "nrf_soc.h"
 #include "version.h"
+#include "shutdown.h"
 
 #include "memory.h"
 #include "ownet.h"
@@ -354,6 +355,10 @@ void mainloop()
           slTxPacket.length = len + 1;
           syslinkSend(&slTxPacket);
         } break;
+
+        case SYSLINK_PM_SHUTDOWN_ACK:
+          shutdownReceivedAck();
+          break;
       }
     }
 
@@ -403,20 +408,11 @@ void mainloop()
 
     // Button event handling
     ButtonEvent be = buttonGetState();
-    bool usbConnected = pmUSBPower();
-    if ((pmGetState() != pmSysOff) && (be == buttonShortPress) && !usbConnected)
+    if ((pmGetState() != pmSysOff) && (be == buttonShortPress))
     {
-      pmSetState(pmAllOff);
-      /*swdInit();
-      swdTest();*/
-    }
-    else if ((pmGetState() != pmSysOff) && (be == buttonShortPress)
-                                        && usbConnected)
-    {
-    	//pmSetState(pmSysOff);
-      pmSetState(pmAllOff);
-        /*swdInit();
-        swdTest();*/
+      // Request graceful shutdown from STM32, will timeout and shutdown
+      // if no response is received.
+      shutdownSendRequest();
     }
     else if ((pmGetState() == pmSysOff) && (be == buttonShortPress))
     {
@@ -441,6 +437,7 @@ void mainloop()
     // processes loop
     buttonProcess();
     pmProcess();
+    shutdownProcess();
     //owRun();       //TODO!
   }
 }
