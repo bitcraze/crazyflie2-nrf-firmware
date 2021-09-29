@@ -337,6 +337,10 @@ void mainloop()
           }
           break;
         case SYSLINK_RADIO_P2P_BROADCAST:
+          // Check that bluetooth is disabled and disable it if not
+          if (bleEnabled) {
+            disableBle();
+          }
           // Send the P2P packet immediately without buffer
           esbSendP2PPacket(slRxPacket.data[0],&slRxPacket.data[1],slRxPacket.length-1);
           break;
