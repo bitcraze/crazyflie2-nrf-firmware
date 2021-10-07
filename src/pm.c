@@ -360,14 +360,14 @@ void pmProcess() {
     {
       // Disable charging
       nrf_gpio_pin_set(PM_CHG_EN);
-      LED_OFF();
+//      LED_OFF();
     }
     else if (temp > PM_CHARGE_MIN_TEMP + PM_CHARE_HYSTERESIS  &&
              temp < PM_CHARGE_MAX_TEMP - PM_CHARE_HYSTERESIS)
     {
       // Enable charging
       nrf_gpio_pin_clear(PM_CHG_EN);
-      LED_ON();
+//      LED_ON();
     }
   }
 #endif

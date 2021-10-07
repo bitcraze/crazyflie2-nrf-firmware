@@ -363,6 +363,12 @@ void mainloop()
         case SYSLINK_PM_SHUTDOWN_ACK:
           shutdownReceivedAck();
           break;
+        case SYSLINK_PM_LED_ON:
+          LED_ON();
+          break;
+        case SYSLINK_PM_LED_OFF:
+          LED_OFF();
+          break;
       }
     }
 
