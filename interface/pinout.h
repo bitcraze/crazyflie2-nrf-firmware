@@ -58,6 +58,9 @@
   #define OW_PIN 8
   #define WKUP_PIN 11
 
+  #define N_IO_1 12
+  #define N_IO_2 11
+
   #define LED_PIN 13
 
   #define PM_CHG_PIN 0
@@ -78,6 +81,9 @@
   #define OW_PULLUP_PIN 12
   #define OW_PIN 8
   #define WKUP_PIN 11
+
+  #define N_IO_1 12
+  #define N_IO_2 11
 
   #define LED_PIN 10
 
