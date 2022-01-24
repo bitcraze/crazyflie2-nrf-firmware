@@ -316,7 +316,17 @@ void esbInit()
 
   NRF_RADIO->TXPOWER = (txpower << RADIO_TXPOWER_TXPOWER_Pos);
 
-  NRF_RADIO->MODE = (RADIO_MODE_MODE_Ble_1Mbit << RADIO_MODE_MODE_Pos);
+  switch (datarate) {
+  case esbDatarate250K:
+      NRF_RADIO->MODE = (RADIO_MODE_MODE_Nrf_250Kbit << RADIO_MODE_MODE_Pos);
+      break;
+  case esbDatarate1M:
+      NRF_RADIO->MODE = (RADIO_MODE_MODE_Nrf_1Mbit << RADIO_MODE_MODE_Pos);
+      break;
+  case esbDatarate2M:
+      NRF_RADIO->MODE = (RADIO_MODE_MODE_Nrf_2Mbit << RADIO_MODE_MODE_Pos);
+      break;
+  }
 
   NRF_RADIO->FREQUENCY = channel;
 
