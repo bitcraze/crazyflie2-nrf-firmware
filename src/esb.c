@@ -44,8 +44,8 @@
 
 extern int bleEnabled;
 
-#define RXQ_LEN 16
-#define TXQ_LEN 16
+#define RXQ_LEN 8
+#define TXQ_LEN 8
 
 static bool isInit = true;
 
