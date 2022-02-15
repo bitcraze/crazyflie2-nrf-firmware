@@ -13,8 +13,8 @@ jobs:
 
     strategy:
       matrix:
-        platform: [cf2, tag]
-    
+        platform: [cf2, tag, bolt]
+
     env:
       PLATFORM: ${{ matrix.platform }}
 
@@ -22,7 +22,7 @@ jobs:
     - uses: actions/checkout@v2
     - name: Check and build
       run: docker run --rm -v ${PWD}:/module bitcraze/builder ./tools/build/build PLATFORM=$PLATFORM
-    
+
     - name: Upload Build Artifact
       uses: actions/upload-artifact@v2.1.4
       with:

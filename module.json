@@ -18,6 +18,9 @@
     ],
     "tag": [
       "PLATFORM=tag"
+    ],
+    "tag": [
+      "PLATFORM=bolt"
     ]
   }
 }
