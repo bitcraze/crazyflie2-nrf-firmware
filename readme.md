@@ -16,6 +16,14 @@ See the [building and flashing instructions](docs/build/build.md) in the github 
 
 Check out the [Bitcraze crazyflie2-nrf-firmware documentation](https://www.bitcraze.io/documentation/repository/crazyflie2-nrf-firmware/master/) on our website.
 
+## Contribute
+Go to the [contribute page](https://www.bitcraze.io/contribute/) on our website to learn more.
+
+### Test code for contribution
+Run the automated build locally to test your code
+
+	./tools/build/build
+
 ## License
 
 Most of the code is licensed under LGPL-3.0.
