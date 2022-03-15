@@ -90,7 +90,9 @@ int platformInitByDeviceType() {
     pmConfig.hasCharger = false;
     pmConfig.hasVbatSink = false;
 
-  } else if ((0 == strcmp(deviceType, "RZ10")) || (0 == strcmp(deviceType, "CB10"))) {
+  } else if ((0 == strcmp(deviceType, "RZ10")) ||
+             (0 == strcmp(deviceType, "CB10")) ||
+             (0 == strcmp(deviceType, "CB11"))) {
     has_rfx2411n = true;
     pmConfig.vbatFactor = ((3.0 / 1.0) / (110.0 / (110.0 + 510.0)));
     pmConfig.adcPrescalingSetup = ADC_CONFIG_INPSEL_AnalogInputOneThirdPrescaling;
