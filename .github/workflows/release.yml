@@ -71,5 +71,5 @@ jobs:
       with:
         upload_url: ${{ steps.get_release_info.outputs.upload_url }}
         asset_path: ${{ matrix.platforms }}_nrf.bin
-        asset_name: ${{ matrix.platforms }}-${{ steps.get_release_version.outputs.release_version }}_nrf.bin
+        asset_name: ${{ matrix.platforms }}_nrf-${{ steps.get_release_version.outputs.release_version }}.bin
         asset_content_type: application/octet-stream
