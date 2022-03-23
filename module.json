@@ -19,7 +19,7 @@
     "tag": [
       "PLATFORM=tag"
     ],
-    "tag": [
+    "bolt": [
       "PLATFORM=bolt"
     ]
   }
