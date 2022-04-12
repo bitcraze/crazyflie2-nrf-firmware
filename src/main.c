@@ -81,7 +81,7 @@ static void handleRadioCmd(struct esbPacket_s * packet);
 static void handleBootloaderCmd(struct esbPacket_s *packet);
 static void disableBle();
 
-static int stmStartTime = 0;
+static int stmStartTime = -1;
 int main()
 {
   // Stop early if the platform is not supported
@@ -92,6 +92,13 @@ int main()
   debugInit();
   systickInit();
   memoryInit();
+
+  // This is needed to avoid putting the GAP8 into an
+  // undefined state when powering off/on quickly or
+  // moving from bootloader to firmware. Without this
+  // the GAP8 might freeze and needs to be powered off
+  // for a while before recovering.
+  msDelay(1000);
 
   if (bleEnabled) {
     ble_init();
@@ -372,8 +379,8 @@ void mainloop()
       }
     }
 
-    // Wait a while to start pushing over the syslink since UART pins are used to launch STM32 i bootloader as well
-    if (systickGetTick() > (stmStartTime + SYSLINK_STARTUP_DELAY_TIME_MS)) {
+    // Wait a while to start pushing over the syslink since UART pins are used to launch STM32 in bootloader as well
+    if (stmStartTime != -1 && systickGetTick() > (stmStartTime + SYSLINK_STARTUP_DELAY_TIME_MS)) {
       // Send the battery voltage and state to the STM every SYSLINK_SEND_PERIOD_MS
       if (systickGetTick() >= vbatSendTime + SYSLINK_SEND_PERIOD_MS) {
         float fdata;
