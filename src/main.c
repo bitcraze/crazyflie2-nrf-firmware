@@ -91,6 +91,13 @@ int main()
   systickInit();
   memoryInit();
 
+  // This is needed to avoid putting the GAP8 into an
+  // undefined state when powering off/on quickly or
+  // moving from bootloader to firmware. Without this
+  // the GAP8 might freeze and needs to be powered off
+  // for a while before recovering.
+  msDelay(1000);
+
   if (bleEnabled) {
     ble_init();
   } else {
