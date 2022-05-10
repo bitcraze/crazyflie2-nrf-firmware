@@ -49,6 +49,8 @@
 
 static enum {state_first_start, state_second_start, state_length, state_type, state_data, state_cksum1, state_cksum2, state_done} state = state_first_start;
 
+static bool isSyslinkActive = false;
+
 void syslinkReset() {
   state = state_first_start;
 }
@@ -130,6 +132,7 @@ bool syslinkReceive(struct syslinkPacket *packet)
         if (c == cksum_b)
         {
           packet->length = length;
+          isSyslinkActive = true;
           state = state_done;
         }
         else
@@ -158,25 +161,38 @@ bool syslinkSend(struct syslinkPacket *packet)
   uint8_t cksum_b=0;
   int i;
 
-  uartPuts(START);
-
-  uartPutc((unsigned char)packet->type);
-  cksum_a += packet->type;
-  cksum_b += cksum_a;
-
-  uartPutc((unsigned char)packet->length);
-  cksum_a += packet->length;
-  cksum_b += cksum_a;
-
-  for (i=0; i < packet->length; i++)
+  if (isSyslinkActive)
   {
-    uartPutc(packet->data[i]);
-    cksum_a += packet->data[i];
+
+    uartPuts(START);
+
+    uartPutc((unsigned char)packet->type);
+    cksum_a += packet->type;
     cksum_b += cksum_a;
+
+    uartPutc((unsigned char)packet->length);
+    cksum_a += packet->length;
+    cksum_b += cksum_a;
+
+    for (i=0; i < packet->length; i++)
+    {
+      uartPutc(packet->data[i]);
+      cksum_a += packet->data[i];
+      cksum_b += cksum_a;
+    }
+
+    uartPutc(cksum_a);
+    uartPutc(cksum_b);
+
+    return true;
   }
+  else
+  {
+    return false;
+  }
+}
 
-  uartPutc(cksum_a);
-  uartPutc(cksum_b);
-
-  return true;
+void syslinkDeactivateUntilPacketReceived()
+{
+  isSyslinkActive = false;
 }

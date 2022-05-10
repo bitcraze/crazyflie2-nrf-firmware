@@ -75,13 +75,21 @@ int bleEnabled = 1;
 int bleEnabled = 0;
 #endif
 
-static bool boottedFromBootloader;
+static struct syslinkPacket slRxPacket;
+static struct syslinkPacket slTxPacket;
+static int radioRSSISendTime = SYSLINK_STARTUP_DELAY_TIME_MS;
+static int vbatSendTime = SYSLINK_STARTUP_DELAY_TIME_MS;
+static uint8_t rssi;
+static bool bootedFromBootloader;
+
+static void sendDataToStmOverSyslink();
+static void handleButtonEvents();
+static void handleSyslinkEvents(bool slReceived);
 
 static void handleRadioCmd(struct esbPacket_s * packet);
 static void handleBootloaderCmd(struct esbPacket_s *packet);
 static void disableBle();
 
-static int stmStartTime = -1;
 int main()
 {
   // Stop early if the platform is not supported
@@ -124,7 +132,7 @@ int main()
   }
 
   if  (NRF_POWER->GPREGRET & 0x20) {
-    boottedFromBootloader = true;
+    bootedFromBootloader = true;
     NRF_POWER->GPREGRET &= ~0x20;
   }
 
@@ -159,14 +167,8 @@ int main()
 
 void mainloop()
 {
-  static struct syslinkPacket slRxPacket;
-  static struct syslinkPacket slTxPacket;
   static EsbPacket esbRxPacket;
   bool esbReceived = false;
-  bool slReceived;
-  static int vbatSendTime;
-  static int radioRSSISendTime;
-  static uint8_t rssi;
   static bool broadcast;
   static bool p2p;
 
@@ -247,215 +249,229 @@ void mainloop()
       }
     }
 
-    slReceived = syslinkReceive(&slRxPacket);
-    if (slReceived)
-    {
-      switch (slRxPacket.type)
-      {
-        case SYSLINK_RADIO_RAW:
-          if (esbCanTxPacket() && (slRxPacket.length < SYSLINK_MTU))
-          {
-            EsbPacket* packet = esbGetTxPacket();
+    handleSyslinkEvents(syslinkReceive(&slRxPacket));
+    sendDataToStmOverSyslink();
 
-            if (packet) {
-              memcpy(packet->data, slRxPacket.data, slRxPacket.length);
-              packet->size = slRxPacket.length;
-
-              esbSendTxPacket(packet);
-            }
-            bzero(slRxPacket.data, SYSLINK_MTU);
-          }
-
-          if (bleEnabled) {
-            if (slRxPacket.length < SYSLINK_MTU) {
-              static EsbPacket pk;
-              memcpy(pk.data,  slRxPacket.data, slRxPacket.length);
-              pk.size = slRxPacket.length;
-              bleCrazyfliesSendPacket(&pk);
-            }
-          }
-
-          break;
-        case SYSLINK_RADIO_CHANNEL:
-          if(slRxPacket.length == 1)
-          {
-            esbSetChannel(slRxPacket.data[0]);
-
-            slTxPacket.type = SYSLINK_RADIO_CHANNEL;
-            slTxPacket.data[0] = slRxPacket.data[0];
-            slTxPacket.length = 1;
-            syslinkSend(&slTxPacket);
-          }
-          break;
-        case SYSLINK_RADIO_DATARATE:
-          if(slRxPacket.length == 1)
-          {
-            esbSetDatarate(slRxPacket.data[0]);
-
-            slTxPacket.type = SYSLINK_RADIO_DATARATE;
-            slTxPacket.data[0] = slRxPacket.data[0];
-            slTxPacket.length = 1;
-            syslinkSend(&slTxPacket);
-          }
-          break;
-        case SYSLINK_RADIO_CONTWAVE:
-          if(slRxPacket.length == 1) {
-            esbSetContwave(slRxPacket.data[0]);
-
-            slTxPacket.type = SYSLINK_RADIO_CONTWAVE;
-            slTxPacket.data[0] = slRxPacket.data[0];
-            slTxPacket.length = 1;
-            syslinkSend(&slTxPacket);
-          }
-          break;
-        case SYSLINK_RADIO_ADDRESS:
-          if(slRxPacket.length == 5)
-          {
-            uint64_t address = 0;
-            memcpy(&address, &slRxPacket.data[0], 5);
-            esbSetAddress(address);
-
-            slTxPacket.type = SYSLINK_RADIO_ADDRESS;
-            memcpy(slTxPacket.data, slRxPacket.data, 5);
-            slTxPacket.length = 5;
-            syslinkSend(&slTxPacket);
-          }
-          break;
-        case SYSLINK_RADIO_POWER:
-          if(slRxPacket.length == 1)
-          {
-            esbSetTxPowerDbm((int8_t)slRxPacket.data[0]);
-
-            slTxPacket.type = SYSLINK_RADIO_POWER;
-            slTxPacket.data[0] = slRxPacket.data[0];
-            slTxPacket.length = 1;
-            syslinkSend(&slTxPacket);
-          }
-          break;
-        case SYSLINK_PM_ONOFF_SWITCHOFF:
-          pmSetState(pmAllOff);
-          break;
-        case SYSLINK_OW_GETINFO:
-        case SYSLINK_OW_READ:
-        case SYSLINK_OW_SCAN:
-        case SYSLINK_OW_WRITE:
-          if (memorySyslink(&slRxPacket)) {
-            syslinkSend(&slRxPacket);
-          }
-          break;
-        case SYSLINK_RADIO_P2P_BROADCAST:
-          // Check that bluetooth is disabled and disable it if not
-          if (bleEnabled) {
-            disableBle();
-          }
-          // Send the P2P packet immediately without buffer
-          esbSendP2PPacket(slRxPacket.data[0],&slRxPacket.data[1],slRxPacket.length-1);
-          break;
-        case SYSLINK_SYS_NRF_VERSION:{
-          size_t len = strlen(V_STAG);
-          slTxPacket.type = SYSLINK_SYS_NRF_VERSION;
-
-          memcpy(&slTxPacket.data[0], V_STAG, len);
-
-          if (V_MODIFIED) {
-            slTxPacket.data[len] = '*';
-            len += 1;
-          }
-
-          slTxPacket.data[len] = '\0';
-          slTxPacket.length = len + 1;
-          syslinkSend(&slTxPacket);
-        } break;
-
-        case SYSLINK_PM_SHUTDOWN_ACK:
-          shutdownReceivedAck();
-          break;
-        case SYSLINK_PM_LED_ON:
-          LED_ON();
-          break;
-        case SYSLINK_PM_LED_OFF:
-          LED_OFF();
-          break;
-      }
-    }
-
-    // Wait a while to start pushing over the syslink since UART pins are used to launch STM32 in bootloader as well
-    if (stmStartTime != -1 && systickGetTick() > (stmStartTime + SYSLINK_STARTUP_DELAY_TIME_MS)) {
-      // Send the battery voltage and state to the STM every SYSLINK_SEND_PERIOD_MS
-      if (systickGetTick() >= vbatSendTime + SYSLINK_SEND_PERIOD_MS) {
-        float fdata;
-        uint8_t flags = 0;
-
-        vbatSendTime = systickGetTick();
-        slTxPacket.type = SYSLINK_PM_BATTERY_STATE;
-        slTxPacket.length = 9;
-
-        flags |= (pmIsCharging() == true)?0x01:0;
-        flags |= (pmUSBPower() == true)?0x02:0;
-
-        slTxPacket.data[0] = flags;
-
-        fdata = pmGetVBAT();
-        memcpy(slTxPacket.data+1, &fdata, sizeof(float));
-
-        fdata = pmGetISET();
-        memcpy(slTxPacket.data+1+4, &fdata, sizeof(float));
-
-#ifdef PM_SYSLINK_INCLUDE_TEMP
-        fdata = pmGetTemp();
-        slTxPacket.length += 4;
-        memcpy(slTxPacket.data+1+8, &fdata, sizeof(float));
-#endif
-        syslinkSend(&slTxPacket);
-      }
-      //Send an RSSI sample to the STM every 10ms(100Hz)
-
-      if (systickGetTick() >= radioRSSISendTime + 10) {
-        radioRSSISendTime = systickGetTick();
-        slTxPacket.type = SYSLINK_RADIO_RSSI;
-        //This message contains only the RSSI measurement which consist
-        //of a single uint8_t
-        slTxPacket.length = sizeof(uint8_t);
-        memcpy(slTxPacket.data, &rssi, sizeof(uint8_t));
-
-        syslinkSend(&slTxPacket);
-      }
-    }
 #endif
 
-    // Button event handling
-    ButtonEvent be = buttonGetState();
-    if ((pmGetState() != pmSysOff) && (be == buttonShortPress))
-    {
-      // Request graceful shutdown from STM32, will timeout and shutdown
-      // if no response is received.
-      shutdownSendRequest();
-    }
-    else if ((pmGetState() == pmSysOff) && (be == buttonShortPress))
-    {
-      //Normal boot
-      pmSysBootloader(false);
-      pmSetState(pmSysRunning);
-    }
-    else if ((pmGetState() == pmSysOff) && boottedFromBootloader)
-    {
-      //Normal boot after bootloader
-      pmSysBootloader(false);
-      pmSetState(pmSysRunning);
-    }
-    else if ((pmGetState() == pmSysOff) && (be == buttonLongPress))
-    {
-      //stm bootloader
-      pmSysBootloader(true);
-      pmSetState(pmSysRunning);
-    }
-    boottedFromBootloader = false;
+    handleButtonEvents();
+
+    bootedFromBootloader = false;
 
     // processes loop
     buttonProcess();
     pmProcess();
     shutdownProcess();
     //owRun();       //TODO!
+  }
+}
+
+static void handleSyslinkEvents(bool slReceived)
+{
+  if (slReceived)
+  {
+    switch (slRxPacket.type)
+    {
+      case SYSLINK_RADIO_RAW:
+        if (esbCanTxPacket() && (slRxPacket.length < SYSLINK_MTU))
+        {
+          EsbPacket* packet = esbGetTxPacket();
+
+          if (packet) {
+            memcpy(packet->data, slRxPacket.data, slRxPacket.length);
+            packet->size = slRxPacket.length;
+
+            esbSendTxPacket(packet);
+          }
+          bzero(slRxPacket.data, SYSLINK_MTU);
+        }
+
+        if (bleEnabled) {
+          if (slRxPacket.length < SYSLINK_MTU) {
+            static EsbPacket pk;
+            memcpy(pk.data,  slRxPacket.data, slRxPacket.length);
+            pk.size = slRxPacket.length;
+            bleCrazyfliesSendPacket(&pk);
+          }
+        }
+
+        break;
+      case SYSLINK_RADIO_CHANNEL:
+        if(slRxPacket.length == 1)
+        {
+          esbSetChannel(slRxPacket.data[0]);
+
+          slTxPacket.type = SYSLINK_RADIO_CHANNEL;
+          slTxPacket.data[0] = slRxPacket.data[0];
+          slTxPacket.length = 1;
+          syslinkSend(&slTxPacket);
+        }
+        break;
+      case SYSLINK_RADIO_DATARATE:
+        if(slRxPacket.length == 1)
+        {
+          esbSetDatarate(slRxPacket.data[0]);
+
+          slTxPacket.type = SYSLINK_RADIO_DATARATE;
+          slTxPacket.data[0] = slRxPacket.data[0];
+          slTxPacket.length = 1;
+          syslinkSend(&slTxPacket);
+        }
+        break;
+      case SYSLINK_RADIO_CONTWAVE:
+        if(slRxPacket.length == 1) {
+          esbSetContwave(slRxPacket.data[0]);
+
+          slTxPacket.type = SYSLINK_RADIO_CONTWAVE;
+          slTxPacket.data[0] = slRxPacket.data[0];
+          slTxPacket.length = 1;
+          syslinkSend(&slTxPacket);
+        }
+        break;
+      case SYSLINK_RADIO_ADDRESS:
+        if(slRxPacket.length == 5)
+        {
+          uint64_t address = 0;
+          memcpy(&address, &slRxPacket.data[0], 5);
+          esbSetAddress(address);
+
+          slTxPacket.type = SYSLINK_RADIO_ADDRESS;
+          memcpy(slTxPacket.data, slRxPacket.data, 5);
+          slTxPacket.length = 5;
+          syslinkSend(&slTxPacket);
+        }
+        break;
+      case SYSLINK_RADIO_POWER:
+        if(slRxPacket.length == 1)
+        {
+          esbSetTxPowerDbm((int8_t)slRxPacket.data[0]);
+
+          slTxPacket.type = SYSLINK_RADIO_POWER;
+          slTxPacket.data[0] = slRxPacket.data[0];
+          slTxPacket.length = 1;
+          syslinkSend(&slTxPacket);
+        }
+        break;
+      case SYSLINK_PM_ONOFF_SWITCHOFF:
+        pmSetState(pmAllOff);
+        break;
+      case SYSLINK_OW_GETINFO:
+      case SYSLINK_OW_READ:
+      case SYSLINK_OW_SCAN:
+      case SYSLINK_OW_WRITE:
+        if (memorySyslink(&slRxPacket)) {
+          syslinkSend(&slRxPacket);
+        }
+        break;
+      case SYSLINK_RADIO_P2P_BROADCAST:
+        // Check that bluetooth is disabled and disable it if not
+        if (bleEnabled) {
+          disableBle();
+        }
+        // Send the P2P packet immediately without buffer
+        esbSendP2PPacket(slRxPacket.data[0],&slRxPacket.data[1],slRxPacket.length-1);
+        break;
+      case SYSLINK_SYS_NRF_VERSION:{
+        size_t len = strlen(V_STAG);
+        slTxPacket.type = SYSLINK_SYS_NRF_VERSION;
+
+        memcpy(&slTxPacket.data[0], V_STAG, len);
+
+        if (V_MODIFIED) {
+          slTxPacket.data[len] = '*';
+          len += 1;
+        }
+
+        slTxPacket.data[len] = '\0';
+        slTxPacket.length = len + 1;
+        syslinkSend(&slTxPacket);
+      } break;
+
+      case SYSLINK_PM_SHUTDOWN_ACK:
+        shutdownReceivedAck();
+        break;
+      case SYSLINK_PM_LED_ON:
+        LED_ON();
+        break;
+      case SYSLINK_PM_LED_OFF:
+        LED_OFF();
+        break;
+    }
+  }
+}
+
+static void sendDataToStmOverSyslink()
+{
+  // Send the battery voltage and state to the STM every SYSLINK_SEND_PERIOD_MS
+  if (systickGetTick() >= vbatSendTime + SYSLINK_SEND_PERIOD_MS)
+  {
+    float fdata;
+    uint8_t flags = 0;
+
+    vbatSendTime = systickGetTick();
+    slTxPacket.type = SYSLINK_PM_BATTERY_STATE;
+    slTxPacket.length = 9;
+
+    flags |= (pmIsCharging() == true) ? 0x01:0;
+    flags |= (pmUSBPower()   == true) ? 0x02:0;
+
+    slTxPacket.data[0] = flags;
+
+    fdata = pmGetVBAT();
+    memcpy(slTxPacket.data + 1, &fdata, sizeof(float));
+
+    fdata = pmGetISET();
+    memcpy(slTxPacket.data + 1 + 4, &fdata, sizeof(float));
+
+  #ifdef PM_SYSLINK_INCLUDE_TEMP
+    fdata = pmGetTemp();
+    slTxPacket.length += 4;
+    memcpy(slTxPacket.data + 1 + 8, &fdata, sizeof(float));
+  #endif
+    syslinkSend(&slTxPacket);
+  }
+
+  //Send an RSSI sample to the STM every 10ms(100Hz)
+  if (systickGetTick() >= radioRSSISendTime + 10)
+  {
+    radioRSSISendTime = systickGetTick();
+    slTxPacket.type = SYSLINK_RADIO_RSSI;
+    //This message contains only the RSSI measurement which consist
+    //of a single uint8_t
+    slTxPacket.length = sizeof(uint8_t);
+    memcpy(slTxPacket.data, &rssi, sizeof(uint8_t));
+
+    syslinkSend(&slTxPacket);
+  }
+}
+
+static void handleButtonEvents()
+{
+  // Button event handling
+  ButtonEvent be = buttonGetState();
+  if ((pmGetState() != pmSysOff) && (be == buttonShortPress))
+  {
+    // Request graceful shutdown from STM32, will timeout and shutdown
+    // if no response is received.
+    shutdownSendRequest();
+  }
+  else if ((pmGetState() == pmSysOff) && (be == buttonShortPress))
+  {
+    //Normal boot
+    pmSysBootloader(false);
+    pmSetState(pmSysRunning);
+  }
+  else if ((pmGetState() == pmSysOff) && bootedFromBootloader)
+  {
+    //Normal boot after bootloader
+    pmSysBootloader(false);
+    pmSetState(pmSysRunning);
+  }
+  else if ((pmGetState() == pmSysOff) && (be == buttonLongPress))
+  {
+    //stm bootloader
+    pmSysBootloader(true);
+    pmSetState(pmSysRunning);
   }
 }
 
@@ -537,12 +553,12 @@ static void handleBootloaderCmd(struct esbPacket_s *packet)
       pmSetState(pmAllOff);
       break;
     case BOOTLOADER_CMD_SYSOFF:
+      syslinkDeactivateUntilPacketReceived();
       pmSetState(pmSysOff);
       break;
     case BOOTLOADER_CMD_SYSON:
       pmSysBootloader(false);
       pmSetState(pmSysRunning);
-      stmStartTime = systickGetTick();
       syslinkReset();
 
       break;

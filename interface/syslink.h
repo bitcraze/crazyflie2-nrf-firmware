@@ -38,11 +38,31 @@ struct syslinkPacket {
   char data[SYSLINK_MTU];
 };
 
+/**
+ * Receive syslink packet.
+ *
+ * @param packet  Syslink packet to receive data.
+ */
 bool syslinkReceive(struct syslinkPacket *packet);
 
+/**
+ * Send syslink packet.
+ * Will only send if link is first activated by a packet beeing received.
+ *
+ * @param packet  Syslink packet containing data to send.
+ */
 bool syslinkSend(struct syslinkPacket *packet);
+
+/**
+ * Reset syslink state machine.
+ */
 void syslinkReset();
 
+/**
+ * Deactivate syslink. Meaning no packets will be sent
+ * until a packet first has been received.
+ */
+void syslinkDeactivateUntilPacketReceived();
 
 // Defined packet types
 #define SYSLINK_RADIO_RAW           0x00
