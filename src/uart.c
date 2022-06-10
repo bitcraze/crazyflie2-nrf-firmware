@@ -177,3 +177,7 @@ char uartGetc()
 
   return c;
 }
+
+int uartDropped() {
+  return dropped;
+}
