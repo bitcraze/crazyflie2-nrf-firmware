@@ -40,4 +40,6 @@ bool uartIsDataReceived();
 
 char uartGetc();
 
+int uartDropped();
+
 #endif //__UART_H__

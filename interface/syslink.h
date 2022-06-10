@@ -95,4 +95,6 @@ void syslinkDeactivateUntilPacketReceived();
 
 #define SYSLINK_SYS_NRF_VERSION 0x30
 
+#define SYSLINK_DEBUG_PROBE 0xF0
+
 #endif

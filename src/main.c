@@ -90,6 +90,10 @@ static void handleRadioCmd(struct esbPacket_s * packet);
 static void handleBootloaderCmd(struct esbPacket_s *packet);
 static void disableBle();
 
+static bool debugProbeReceivedChan = false;
+static bool debugProbeReceivedAddress = false;
+static bool debugProbeReceivedRate = false;
+
 int main()
 {
   // Stop early if the platform is not supported
@@ -305,6 +309,8 @@ static void handleSyslinkEvents(bool slReceived)
           slTxPacket.data[0] = slRxPacket.data[0];
           slTxPacket.length = 1;
           syslinkSend(&slTxPacket);
+
+          debugProbeReceivedChan = true;
         }
         break;
       case SYSLINK_RADIO_DATARATE:
@@ -316,6 +322,8 @@ static void handleSyslinkEvents(bool slReceived)
           slTxPacket.data[0] = slRxPacket.data[0];
           slTxPacket.length = 1;
           syslinkSend(&slTxPacket);
+
+          debugProbeReceivedRate = true;
         }
         break;
       case SYSLINK_RADIO_CONTWAVE:
@@ -339,6 +347,8 @@ static void handleSyslinkEvents(bool slReceived)
           memcpy(slTxPacket.data, slRxPacket.data, 5);
           slTxPacket.length = 5;
           syslinkSend(&slTxPacket);
+
+          debugProbeReceivedAddress = true;
         }
         break;
       case SYSLINK_RADIO_POWER:
@@ -395,6 +405,18 @@ static void handleSyslinkEvents(bool slReceived)
         break;
       case SYSLINK_PM_LED_OFF:
         LED_OFF();
+        break;
+      case SYSLINK_DEBUG_PROBE:
+      {
+        slTxPacket.type = SYSLINK_DEBUG_PROBE;
+        slTxPacket.data[0] = debugProbeReceivedAddress;
+        slTxPacket.data[1] = debugProbeReceivedChan;
+        slTxPacket.data[2] = debugProbeReceivedRate;
+        slTxPacket.data[3] = (uint8_t)uartDropped();
+
+        slTxPacket.length = 4;
+        syslinkSend(&slTxPacket);
+      }
         break;
     }
   }
