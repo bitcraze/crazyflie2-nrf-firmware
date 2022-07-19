@@ -3,7 +3,7 @@ title: Development for NRF51
 page_id: starting_development 
 ---
 
-This page aims at documenting how to start developing with the Crazyflie 2.X NRF51 chip
+This page aims at documenting how to start developing with the Crazyflie 2.X NRF51 chip. Make sure that you have soldered the nrf debug connector first, which is provided with [debug adapter kit](https://www.bitcraze.io/products/debug-adapter-kit/) (see the 'usage' tab)
 
 
 ### nRF51
