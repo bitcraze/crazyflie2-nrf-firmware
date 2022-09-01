@@ -51,6 +51,9 @@ static enum {state_first_start, state_second_start, state_length, state_type, st
 
 static bool isSyslinkActive = false;
 
+static uint8_t syslinkRxCheckSum1ErrorCnt;
+static uint8_t syslinkRxCheckSum2ErrorCnt;
+
 void syslinkReset() {
   state = state_first_start;
 }
@@ -119,6 +122,7 @@ bool syslinkReceive(struct syslinkPacket *packet)
         }
         else
         {  // Wrong checksum
+          syslinkRxCheckSum1ErrorCnt++;
           state = state_first_start;
 #ifdef SYSLINK_CKSUM_MON
           if (NRF_GPIO->OUT & (1<<LED_PIN))
@@ -137,6 +141,7 @@ bool syslinkReceive(struct syslinkPacket *packet)
         }
         else
         {  // Wrong checksum
+          syslinkRxCheckSum2ErrorCnt++;
           state = state_first_start;
           step = 0;
 #ifdef SYSLINK_CKSUM_MON
@@ -195,4 +200,13 @@ bool syslinkSend(struct syslinkPacket *packet)
 void syslinkDeactivateUntilPacketReceived()
 {
   isSyslinkActive = false;
+}
+
+
+uint8_t syslinkGetRxCheckSum1ErrorCnt() {
+  return syslinkRxCheckSum1ErrorCnt;
+}
+
+uint8_t syslinkGetRxCheckSum2ErrorCnt() {
+  return syslinkRxCheckSum2ErrorCnt;
 }

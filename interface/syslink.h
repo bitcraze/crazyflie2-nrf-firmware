@@ -64,6 +64,21 @@ void syslinkReset();
  */
 void syslinkDeactivateUntilPacketReceived();
 
+/**
+ * @brief Get the number of times checksum 1 has failed for packets on syslink from the STM
+ *
+ * @return uint8_t Number of failures
+ */
+uint8_t syslinkGetRxCheckSum1ErrorCnt();
+
+/**
+ * @brief Get the number of times checksum 2 has failed for packets on syslink from the STM
+ *
+ * @return uint8_t Number of failures
+ */
+uint8_t syslinkGetRxCheckSum2ErrorCnt();
+
+
 // Defined packet types
 #define SYSLINK_RADIO_RAW           0x00
 #define SYSLINK_RADIO_CHANNEL       0x01
