@@ -413,8 +413,12 @@ static void handleSyslinkEvents(bool slReceived)
         slTxPacket.data[1] = debugProbeReceivedChan;
         slTxPacket.data[2] = debugProbeReceivedRate;
         slTxPacket.data[3] = (uint8_t)uartDropped();
+        slTxPacket.data[4] = uartGetError();
+        slTxPacket.data[5] = uartGetErrorCount();
+        slTxPacket.data[6] = syslinkGetRxCheckSum1ErrorCnt();
+        slTxPacket.data[7] = syslinkGetRxCheckSum2ErrorCnt();
 
-        slTxPacket.length = 4;
+        slTxPacket.length = 8;
         syslinkSend(&slTxPacket);
       }
         break;

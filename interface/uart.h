@@ -41,5 +41,7 @@ bool uartIsDataReceived();
 char uartGetc();
 
 int uartDropped();
+uint8_t uartGetError();
+uint8_t uartGetErrorCount();
 
 #endif //__UART_H__

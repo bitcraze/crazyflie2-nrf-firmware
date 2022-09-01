@@ -42,17 +42,19 @@ static int tail = 0;
 static int dropped = 0;
 static char dummy;
 
-int error = 0;
+static uint8_t uartError = 0;
+static uint8_t uartErrorCount = 0;
 
 void UART0_IRQHandler()
 {
   int nhead = head+1;
 
-  //if (NRF_UART0->ERRORSRC) {
-  //  error = NRF_UART0->ERRORSRC;
-  //  NRF_UART0->ERRORSRC = 0xFF;
-  //  __BKPT(0);
- // }
+  if (NRF_UART0->ERRORSRC) {
+    uartError = NRF_UART0->ERRORSRC;
+    NRF_UART0->ERRORSRC = 0xFF;
+
+    uartErrorCount++;
+  }
 
   NRF_UART0->EVENTS_RXDRDY = 0;
 
@@ -180,4 +182,12 @@ char uartGetc()
 
 int uartDropped() {
   return dropped;
+}
+
+uint8_t uartGetError() {
+  return uartError;
+}
+
+uint8_t uartGetErrorCount() {
+  return uartErrorCount;
 }
