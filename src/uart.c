@@ -35,15 +35,15 @@ static bool isInit = false;
 
 #define Q_LENGTH 128
 
-static char rxq[Q_LENGTH];
-static int head = 0;
-static int tail = 0;
+static volatile char rxq[Q_LENGTH];
+static volatile int head = 0;
+static volatile int tail = 0;
 
-static int dropped = 0;
-static char dummy;
+static volatile int dropped = 0;
+static volatile char dummy;
 
-static uint8_t uartError = 0;
-static uint8_t uartErrorCount = 0;
+static volatile uint8_t uartError = 0;
+static volatile uint8_t uartErrorCount = 0;
 
 void UART0_IRQHandler()
 {
