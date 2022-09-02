@@ -49,7 +49,7 @@
 #define TICK_PER_US 16
 
 //local variables
-static bool running = false;
+static volatile bool running = false;
 static int sample = 0;
 
 // exportable link-level functions

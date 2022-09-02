@@ -51,18 +51,18 @@ static uint64_t address = 0xE7E7E7E7E7ULL;
 static enum {doTx, doRx} rs;      //Radio state
 
 static EsbPacket rxPackets[RXQ_LEN];
-static int rxq_head = 0;
-static int rxq_tail = 0;
+static volatile int rxq_head = 0;
+static volatile int rxq_tail = 0;
 
 static EsbPacket txPackets[TXQ_LEN];
-static int txq_head = 0;
-static int txq_tail = 0;
+static volatile int txq_head = 0;
+static volatile int txq_tail = 0;
 
 // 1bit packet counters
-static int curr_down = 1;
-static int curr_up = 1;
+static volatile int curr_down = 1;
+static volatile int curr_up = 1;
 
-static bool has_safelink;
+static volatile bool has_safelink;
 
 static EsbPacket ackPacket;     // Empty ack packet
 static EsbPacket servicePacket; // Packet sent to answer a low level request

@@ -25,7 +25,7 @@
  */
 #include <nrf.h>
 
-static unsigned int tick = 0;
+static volatile unsigned int tick = 0;
 
 //void RTC1_IRQHandler()
 void TIMER2_IRQHandler()
