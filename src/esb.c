@@ -50,11 +50,11 @@ static uint64_t address = 0xE7E7E7E7E7ULL;
 
 static enum {doTx, doRx} rs;      //Radio state
 
-static volatile EsbPacket rxPackets[RXQ_LEN];
+static EsbPacket rxPackets[RXQ_LEN];
 static volatile int rxq_head = 0;
 static volatile int rxq_tail = 0;
 
-static volatile EsbPacket txPackets[TXQ_LEN];
+static EsbPacket txPackets[TXQ_LEN];
 static volatile int txq_head = 0;
 static volatile int txq_tail = 0;
 
@@ -64,9 +64,9 @@ static volatile int curr_up = 1;
 
 static volatile bool has_safelink;
 
-static volatile EsbPacket ackPacket;     // Empty ack packet
-static volatile EsbPacket servicePacket; // Packet sent to answer a low level request
-static volatile EsbPacket p2pPacket;     // Packet to send to other crazyflie in broadcast
+static EsbPacket ackPacket;     // Empty ack packet
+static EsbPacket servicePacket; // Packet sent to answer a low level request
+static EsbPacket p2pPacket;     // Packet to send to other crazyflie in broadcast
 /* helper functions */
 
 static uint32_t swap_bits(uint32_t inp)
