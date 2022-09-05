@@ -50,7 +50,7 @@
 
 //local variables
 static volatile bool running = false;
-static int sample = 0;
+static volatile int sample = 0;
 
 // exportable link-level functions
 SMALLINT owTouchReset(int);
