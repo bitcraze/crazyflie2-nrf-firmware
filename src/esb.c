@@ -48,7 +48,7 @@ static int txpower = RADIO_TXPOWER_TXPOWER_0dBm;
 static bool contwave = false;
 static uint64_t address = 0xE7E7E7E7E7ULL;
 
-static enum {doTx, doRx} rs;      //Radio state
+static volatile enum {doTx, doRx} rs;      //Radio state
 
 static EsbPacket rxPackets[RXQ_LEN];
 static volatile int rxq_head = 0;
@@ -97,7 +97,7 @@ static uint32_t bytewise_bitswap(uint32_t inp)
 // Handles the queue
 static void setupTx(bool retry, bool empty)
 {
-  static EsbPacket * lastSentPacket;
+  static volatile EsbPacket * lastSentPacket;
 
   if (!empty && retry) {
     NRF_RADIO->PACKETPTR = (uint32_t)lastSentPacket;
