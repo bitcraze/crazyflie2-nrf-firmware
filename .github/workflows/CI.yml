@@ -8,12 +8,16 @@ on:
     branches: [ master ]
 
 jobs:
+  read_targets_from_file:
+    uses: ./.github/workflows/read_build_targets.yml
+
   build:
+    needs: read_targets_from_file
     runs-on: ubuntu-latest
 
     strategy:
       matrix:
-        platform: [cf2, tag, bolt]
+        ${{fromJson(needs.read_targets_from_file.outputs.platforms)}}
 
     env:
       PLATFORM: ${{ matrix.platform }}
