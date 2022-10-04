@@ -6,8 +6,12 @@ on:
   workflow_dispatch:
 
 jobs:
+  read_targets_from_file:
+    uses: ./.github/workflows/read_build_targets.yml
+
   release:
     name: Create Release on Github
+    needs: read_targets_from_file
     runs-on: ubuntu-latest
     steps:
     - name: Create Release
@@ -26,7 +30,7 @@ jobs:
       uses: actions/upload-artifact@v1
       with:
         name: release_url
-        path: release_url.txt       
+        path: release_url.txt
 
   upload:
     name: Upload Binaries to release
@@ -35,8 +39,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platforms: [cf2, tag, bolt]
-  
+        ${{fromJson(needs.read_targets_from_file.outputs.platforms)}}
+
     steps:
     - name: Checkout Repo
       uses: actions/checkout@v2
@@ -44,7 +48,7 @@ jobs:
         submodules: true
 
     - name: Build
-      run: docker run --rm -v ${PWD}:/module bitcraze/builder bash -c "./tools/build/build PLATFORM=${{ matrix.platforms }} UNIT_TEST_STYLE=min"
+      run: docker run --rm -v ${PWD}:/module bitcraze/builder bash -c "./tools/build/build PLATFORM=${{ matrix.platform }} UNIT_TEST_STYLE=min"
 
     - name: Load Release URL File from release job
       uses: actions/download-artifact@v1
@@ -56,19 +60,19 @@ jobs:
       run: |
         value=`cat release_url/release_url.txt`
         echo ::set-output name=upload_url::$value
-        
-    - name: Get the version 
-      id: get_release_version 
-      env: 
+
+    - name: Get the version
+      id: get_release_version
+      env:
         GITHUB_REF : ${{ github.ref }}
       run: echo ::set-output name=release_version::${GITHUB_REF/refs\/tags\//}
-      
-    - name: Upload ${{ matrix.platforms }} bin
+
+    - name: Upload ${{ matrix.platform }} bin
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.get_release_info.outputs.upload_url }}
-        asset_path: ${{ matrix.platforms }}_nrf.bin
-        asset_name: ${{ matrix.platforms }}_nrf-${{ steps.get_release_version.outputs.release_version }}.bin
+        asset_path: ${{ matrix.platform }}_nrf.bin
+        asset_name: ${{ matrix.platform }}_nrf-${{ steps.get_release_version.outputs.release_version }}.bin
         asset_content_type: application/octet-stream
