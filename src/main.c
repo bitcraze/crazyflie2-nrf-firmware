@@ -432,15 +432,13 @@ static void sendDataToStmOverSyslink()
   if (systickGetTick() >= vbatSendTime + SYSLINK_SEND_PERIOD_MS)
   {
     float fdata;
-    uint8_t flags = 0;
 
     vbatSendTime = systickGetTick();
     slTxPacket.type = SYSLINK_PM_BATTERY_STATE;
     slTxPacket.length = 9;
 
-    flags |= (pmIsCharging() == true) ? 0x01:0;
-    flags |= (pmUSBPower()   == true) ? 0x02:0;
-
+    // Set flags that if we're plugged in to USB, currently charging and if we can charge.
+    uint8_t flags = getPowerStatusFlags();
     slTxPacket.data[0] = flags;
 
     fdata = pmGetVBAT();
