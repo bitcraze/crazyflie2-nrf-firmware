@@ -31,9 +31,8 @@ typedef enum {chgOff=0, chgCharging=1, chgCharged=2} ChgState;
 
 void pmInit();
 
-bool pmUSBPower(void);
-
-bool pmIsCharging(void);
+/* Return power flags that indicate if we're plugged in to USB, currently charging and if we can charge. */
+uint8_t getPowerStatusFlags();
 
 float pmGetVBAT(void);
 

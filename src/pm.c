@@ -52,6 +52,13 @@ static PmState state;
 static PmState targetState;
 static bool systemBootloader=false;
 
+typedef struct {
+  uint8_t isCharging   : 1;
+  uint8_t usbPluggedIn : 1;
+  uint8_t canCharge    : 1;
+  uint8_t unused       : 5;
+} power_flag_t;
+
 typedef enum {adcVBAT, adcISET} ADCState;
 
 static ADCState adcState = adcVBAT;
@@ -77,12 +84,38 @@ void pmInit()
   pmConfig = platformGetPmConfig();
 }
 
-bool pmUSBPower(void) {
-	return pmConfig->hasCharger ? nrf_gpio_pin_read(PM_PGOOD_PIN) == 0 : 0;
+uint8_t pmPGood() {
+  return nrf_gpio_pin_read(PM_PGOOD_PIN);
 }
 
-bool pmIsCharging(void) {
-  return pmConfig->hasCharger ? nrf_gpio_pin_read(PM_CHG_PIN) == 0 : 0;
+uint8_t pmIsCharging() {
+  return nrf_gpio_pin_read(PM_CHG_PIN);
+}
+
+uint8_t getPowerStatusFlags() {
+  power_flag_t powerFlags;
+  uint8_t isCharging = pmIsCharging();
+  uint8_t pGood      = pmPGood();
+
+  if (pmConfig->hasCharger) {
+    // On the Crazyflie 'pGood' means valid input voltage from USB.
+    powerFlags.isCharging   = !isCharging;  // Active LOW
+    powerFlags.usbPluggedIn = !pGood;       // Active LOW
+    powerFlags.canCharge    = 1;            //
+  } else {
+    // Bolt doesn't have a battery charger, but a DC-DC converter that sets the
+    // pGood signal instead. pGood thus means that the output power from the DC regulator is good.
+    // We don't technically know if we're connected to USB, only if we are connected
+    // to the battery or not. So if we're NOT connected to the battery, we're probably connected to USB.
+    powerFlags.usbPluggedIn   = !pGood; // No battery? Must be USB
+    powerFlags.isCharging     = 0;      // Not used
+    powerFlags.canCharge      = 0;      // No charger on bolt
+
+    // Also note: If we power bolt with Battery, then plug in USB, then unplug battery, the pGood value
+    // will remain the same! Thus we cannot notice WHEN we plug into USB.
+  }
+
+  return *( (uint8_t*) &powerFlags );
 }
 
 /*ChgState chgState(void) {
