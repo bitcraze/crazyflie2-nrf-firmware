@@ -81,7 +81,9 @@ static int radioRSSISendTime = SYSLINK_STARTUP_DELAY_TIME_MS;
 static int vbatSendTime = SYSLINK_STARTUP_DELAY_TIME_MS;
 static uint8_t rssi;
 static bool bootedFromBootloader;
+static bool enableBatteryAutoupdate = false;
 
+static void syslinkEnableBatteryMessages();
 static void sendDataToStmOverSyslink();
 static void handleButtonEvents();
 static void handleSyslinkEvents(bool slReceived);
@@ -396,7 +398,9 @@ static void handleSyslinkEvents(bool slReceived)
         slTxPacket.length = len + 1;
         syslinkSend(&slTxPacket);
       } break;
-
+      case SYSLINK_PM_BATTERY_AUTOUPDATE:
+        syslinkEnableBatteryMessages();
+        break;
       case SYSLINK_PM_SHUTDOWN_ACK:
         shutdownReceivedAck();
         break;
@@ -426,46 +430,55 @@ static void handleSyslinkEvents(bool slReceived)
   }
 }
 
+static void syslinkEnableBatteryMessages()
+{
+  enableBatteryAutoupdate = true;
+}
+
+
 static void sendDataToStmOverSyslink()
 {
-  // Send the battery voltage and state to the STM every SYSLINK_SEND_PERIOD_MS
-  if (systickGetTick() >= vbatSendTime + SYSLINK_SEND_PERIOD_MS)
+  if (enableBatteryAutoupdate)
   {
-    float fdata;
+    // Send the battery voltage and state to the STM every SYSLINK_SEND_PERIOD_MS
+    if ((systickGetTick() >= vbatSendTime + SYSLINK_SEND_PERIOD_MS))
+    {
+      float fdata;
 
-    vbatSendTime = systickGetTick();
-    slTxPacket.type = SYSLINK_PM_BATTERY_STATE;
-    slTxPacket.length = 9;
+      vbatSendTime = systickGetTick();
+      slTxPacket.type = SYSLINK_PM_BATTERY_STATE;
+      slTxPacket.length = 9;
 
-    // Set flags that if we're plugged in to USB, currently charging and if we can charge.
-    uint8_t flags = getPowerStatusFlags();
-    slTxPacket.data[0] = flags;
+      // Set flags that if we're plugged in to USB, currently charging and if we can charge.
+      uint8_t flags = getPowerStatusFlags();
+      slTxPacket.data[0] = flags;
 
-    fdata = pmGetVBAT();
-    memcpy(slTxPacket.data + 1, &fdata, sizeof(float));
+      fdata = pmGetVBAT();
+      memcpy(slTxPacket.data + 1, &fdata, sizeof(float));
 
-    fdata = pmGetISET();
-    memcpy(slTxPacket.data + 1 + 4, &fdata, sizeof(float));
+      fdata = pmGetISET();
+      memcpy(slTxPacket.data + 1 + 4, &fdata, sizeof(float));
 
-  #ifdef PM_SYSLINK_INCLUDE_TEMP
-    fdata = pmGetTemp();
-    slTxPacket.length += 4;
-    memcpy(slTxPacket.data + 1 + 8, &fdata, sizeof(float));
-  #endif
-    syslinkSend(&slTxPacket);
-  }
+    #ifdef PM_SYSLINK_INCLUDE_TEMP
+      fdata = pmGetTemp();
+      slTxPacket.length += 4;
+      memcpy(slTxPacket.data + 1 + 8, &fdata, sizeof(float));
+    #endif
+      syslinkSend(&slTxPacket);
+    }
 
-  //Send an RSSI sample to the STM every 10ms(100Hz)
-  if (systickGetTick() >= radioRSSISendTime + 10)
-  {
-    radioRSSISendTime = systickGetTick();
-    slTxPacket.type = SYSLINK_RADIO_RSSI;
-    //This message contains only the RSSI measurement which consist
-    //of a single uint8_t
-    slTxPacket.length = sizeof(uint8_t);
-    memcpy(slTxPacket.data, &rssi, sizeof(uint8_t));
+    //Send an RSSI sample to the STM every 10ms(100Hz)
+    if (systickGetTick() >= radioRSSISendTime + 10)
+    {
+      radioRSSISendTime = systickGetTick();
+      slTxPacket.type = SYSLINK_RADIO_RSSI;
+      //This message contains only the RSSI measurement which consist
+      //of a single uint8_t
+      slTxPacket.length = sizeof(uint8_t);
+      memcpy(slTxPacket.data, &rssi, sizeof(uint8_t));
 
-    syslinkSend(&slTxPacket);
+      syslinkSend(&slTxPacket);
+    }
   }
 }
 
