@@ -7,6 +7,10 @@ cf2_nrf.map
 cf2_nrf.hex
 tag_nrf.map
 tag_nrf.hex
+bolt_nrf.map
+bolt_nrf.hex
+flapper_nrf.map
+flapper_nrf.hex
 config.mk
 *.patch
 .cproject
