@@ -103,16 +103,11 @@ uint8_t getPowerStatusFlags() {
     powerFlags.usbPluggedIn = !pGood;       // Active LOW
     powerFlags.canCharge    = 1;            //
   } else {
-    // Bolt doesn't have a battery charger, but a DC-DC converter that sets the
-    // pGood signal instead. pGood thus means that the output power from the DC regulator is good.
-    // We don't technically know if we're connected to USB, only if we are connected
-    // to the battery or not. So if we're NOT connected to the battery, we're probably connected to USB.
-    powerFlags.usbPluggedIn   = !pGood; // No battery? Must be USB
+    // Bolt doesn't have a battery charger and the nRF can't detect if
+    // USB is pluggged in.
+    powerFlags.usbPluggedIn   = 0;      // We don't know
     powerFlags.isCharging     = 0;      // Not used
     powerFlags.canCharge      = 0;      // No charger on bolt
-
-    // Also note: If we power bolt with Battery, then plug in USB, then unplug battery, the pGood value
-    // will remain the same! Thus we cannot notice WHEN we plug into USB.
   }
 
   return *( (uint8_t*) &powerFlags );
