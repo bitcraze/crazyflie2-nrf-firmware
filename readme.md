@@ -1,7 +1,7 @@
-# Crazyflie 2.0 NRF51 firmware [![CI](https://github.com/bitcraze/crazyflie2-nrf-firmware/workflows/CI/badge.svg)](https://github.com/bitcraze/crazyflie2-nrf-firmware/actions?query=workflow%3ACI)
+# Crazyflie 2.X NRF51 firmware [![CI](https://github.com/bitcraze/crazyflie2-nrf-firmware/workflows/CI/badge.svg)](https://github.com/bitcraze/crazyflie2-nrf-firmware/actions?query=workflow%3ACI)
 
-Source code of the firmware running in the Crazyflie 2.0 nRF51822.
-This microcontroller have a couple of roles:
+Source code of the firmware running in the Crazyflie 2.X nRF51822.
+This microcontroller has a couple of roles:
  - Power management (ON/OFF logic and battery handling)
  - Radio communication
    - Enhanced Shockburst compatible with Crazyradio (PA)
