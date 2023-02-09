@@ -5,12 +5,12 @@ page_id: syslink
 
 
 Syslink is the protocol used between the STM32 and NRF51 in Crazyflie
-2.0. It handles low level communication on the serial port.
+2.X. It handles low level communication on the serial port.
 
 Physical format
 ---------------
 
-In Crazyflie 2.0 syslink is transmitted on serial port at 1MBaud. It is
+In Crazyflie 2.X syslink is transmitted on serial port at 1MBaud. It is
 a packet-based protocol.
 
       +-----------+------+-----+=============+-----+-----+
@@ -133,7 +133,7 @@ Power management packets
 -   **Type**: 0x11
 -   **Format**: No data
 
-When sent by the STM32 to the NRF51, the NRF51 switch OFF the system and
+When sent by the STM32 to the NRF51, the NRF51 switches OFF the system and
 goes in deep sleep.
 
 ### SYSLINK\_PM\_BATTERY\_STATE
