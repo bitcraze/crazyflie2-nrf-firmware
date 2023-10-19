@@ -13,6 +13,9 @@
 /* Core of the Crazyflie bluetooth implementation. Instanciate Crazyflie
  * service
  */
+#ifndef S110
+#error S110 shall be used when using BLE
+#endif
 
 #include <stdint.h>
 #include <string.h>
@@ -39,10 +42,6 @@
 #include "bitcraze_uuids.h"
 
 #include "ble_crazyflies.h"
-
-#if S110==0
-#error S110 shall be used when using BLE
-#endif
 
 #define DEVICE_NAME                          "Crazyflie"                              /**< Name of device. Will be included in the advertising data. */
 #define MANUFACTURER_NAME                    "Bitcraze"                     /**< Manufacturer. Will be passed to Device Information Service. */

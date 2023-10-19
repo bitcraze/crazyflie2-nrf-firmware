@@ -32,9 +32,6 @@
 
 #include <nrf.h>
 
-#include <ble_gap.h>
-#include <nrf_soc.h>
-
 #define RXQ_LEN 8
 #define TXQ_LEN 8
 
@@ -468,14 +465,18 @@ void esbSetDatarate(EsbDatarate dr)
   esbReset();
 }
 
+
+#ifdef BLE
 void ble_advertising_stop(void);
 void advertising_start(void);
 void ble_sd_stop(void);
+#endif
 
 void esbSetContwave(bool enable)
 {
   contwave = enable;
 
+#ifdef BLE
   if (bleEnabled) {
     if (enable) {
       ble_advertising_stop();
@@ -483,6 +484,7 @@ void esbSetContwave(bool enable)
       advertising_start();
     }
   }
+#endif
 
   esbReset();
 }

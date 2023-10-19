@@ -1,13 +1,14 @@
 #Put your personal build config in config.mk and DO NOT COMMIT IT!
 -include config.mk
 
+PLATFORM ?= cf2
+-include platform/platform_$(PLATFORM).mk
+
 CLOAD_SCRIPT ?= python3 -m cfloader
 
 S110 ?= 1     # SoftDevice flashed or not
 BLE  ?= 1     # BLE mode activated or not. If disabled, CRTP mode is active
 DEBUG_PRINT_ON_SEGGER_RTT ?= 0 # debug prints
-
-PLATFORM ?= cf2
 
 CROSS_COMPILE?=arm-none-eabi-
 
@@ -42,45 +43,50 @@ CFLAGS+=$(PROCESSOR) $(NRF) $(PERSONAL_DEFINES) $(INCLUDES) $(CONFIG) $(BUILD_OP
 ASFLAGS=$(PROCESSOR)
 LDFLAGS=$(PROCESSOR) --specs=nano.specs -Wl,-Map=$(PROGRAM).map# -Wl,--gc-sections
 ifdef SEMIHOSTING
-LDFLAGS+= --specs=rdimon.specs -lc -lrdimon
-CFLAGS+= -DSEMIHOSTING
+	LDFLAGS+= --specs=rdimon.specs -lc -lrdimon
+	CFLAGS+= -DSEMIHOSTING
 endif
 
-ifeq ($(strip $(S110)), 1)
-LDFLAGS += -T gcc_nrf51_s110_xxaa.ld
-CFLAGS += -DS110=1
-else
-LDFLAGS += -T gcc_nrf51_blank_xxaa.ld
-endif
-
-ifeq ($(strip $(BLE)), 1)
-CFLAGS += -DBLE=1
-endif
-
-OBJS += src/ble/ble.o
-OBJS += src/ble/ble_crazyflies.o
-OBJS += src/ble/timeslot.o
-
-OBJS += $(NRF51_SDK)/Source/ble/ble_advdata.o
-OBJS += $(NRF51_SDK)/Source/ble/ble_conn_params.o
-OBJS += $(NRF51_SDK)/Source/ble/ble_services/ble_srv_common.o
-OBJS += $(NRF51_SDK)/Source/ble/ble_services/ble_dis.o
-OBJS += $(NRF51_SDK)/Source/sd_common/softdevice_handler.o
-OBJS += $(NRF51_SDK)/Source/app_common/app_timer.o
-OBJS += $(NRF51_SDK)/Source/app_common/pstorage.o
-OBJS += $(NRF51_SDK)/Source/ble/device_manager/device_manager_peripheral.o
-
-CFLAGS += -DBLE_STACK_SUPPORT_REQD -DNRF51
 CFLAGS += -I$(NRF51_SDK)/Include/gcc
 CFLAGS += -I$(NRF51_SDK)/Include/
-CFLAGS += -I$(NRF51_SDK)/Include/ble/
-CFLAGS += -I$(NRF51_SDK)/Include/ble/ble_services/
-CFLAGS += -I$(NRF51_SDK)/Include/ble/device_manager/
-CFLAGS += -I$(NRF_S110)/s110_nrf51822_7.3.0_API/include
-CFLAGS += -I$(NRF_S110)/Include/
-CFLAGS += -I$(NRF51_SDK)/Include/app_common/
-CFLAGS += -I$(NRF51_SDK)/Include/sd_common/
-CFLAGS += -I$(NRF51_SDK)/Include/sdk/
+
+## S110 ################################################################
+ifeq ($(strip $(S110)), 1)
+	LDFLAGS += -T gcc_nrf51_s110_xxaa.ld
+	CFLAGS += -DS110=1
+
+	CFLAGS += -I$(NRF_S110)/s110_nrf51822_7.3.0_API/include
+	CFLAGS += -I$(NRF_S110)/Include/
+else
+	LDFLAGS += -T gcc_nrf51_blank_xxaa.ld
+endif
+
+## BLE ################################################################
+ifeq ($(strip $(BLE)), 1)
+	CFLAGS += -DBLE=1
+
+	CFLAGS += -DBLE_STACK_SUPPORT_REQD -DNRF51
+	CFLAGS += -I$(NRF51_SDK)/Include/ble/
+	CFLAGS += -I$(NRF51_SDK)/Include/ble/ble_services/
+	CFLAGS += -I$(NRF51_SDK)/Include/ble/device_manager/
+	CFLAGS += -I$(NRF51_SDK)/Include/app_common/
+	CFLAGS += -I$(NRF51_SDK)/Include/sd_common/
+	CFLAGS += -I$(NRF51_SDK)/Include/sdk/
+
+	OBJS += src/ble/ble.o
+	OBJS += src/ble/ble_crazyflies.o
+	OBJS += src/ble/timeslot.o
+
+	OBJS += $(NRF51_SDK)/Source/ble/ble_advdata.o
+	OBJS += $(NRF51_SDK)/Source/ble/ble_conn_params.o
+	OBJS += $(NRF51_SDK)/Source/ble/ble_services/ble_srv_common.o
+	OBJS += $(NRF51_SDK)/Source/ble/ble_services/ble_dis.o
+	OBJS += $(NRF51_SDK)/Source/ble/device_manager/device_manager_peripheral.o
+	OBJS += $(NRF51_SDK)/Source/sd_common/softdevice_handler.o
+	OBJS += $(NRF51_SDK)/Source/app_common/app_timer.o
+	OBJS += $(NRF51_SDK)/Source/app_common/pstorage.o
+endif
+
 
 OBJS += src/main.o gcc_startup_nrf51.o system_nrf51.o src/uart.o \
         src/syslink.o src/pm.o src/systick.o src/button.o src/swd.o src/ow.o \

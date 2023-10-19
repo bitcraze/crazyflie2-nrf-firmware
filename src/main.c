@@ -39,15 +39,17 @@
 #include "pm.h"
 #include "pinout.h"
 #include "systick.h"
-#include "nrf_sdm.h"
-#include "nrf_soc.h"
 #include "version.h"
 #include "shutdown.h"
+
+#ifdef BLE
+#include "nrf_sdm.h"
+#include "ble_crazyflies.h"
+#endif
 
 #include "memory.h"
 #include "ownet.h"
 
-#include "ble_crazyflies.h"
 
 extern void  initialise_monitor_handles(void);
 extern int ble_init(void);
@@ -115,7 +117,9 @@ int main()
   msDelay(1000);
 
   if (bleEnabled) {
+#ifdef BLE
     ble_init();
+#endif
   } else {
     NRF_CLOCK->TASKS_HFCLKSTART = 1UL;
     while(!NRF_CLOCK->EVENTS_HFCLKSTARTED);
@@ -180,7 +184,7 @@ void mainloop()
 
   while(1)
   {
-
+#ifdef BLE
     if (bleEnabled) {
       if ((esbReceived == false) && bleCrazyfliesIsPacketReceived()) {
         EsbPacket* packet = bleCrazyfliesGetRxPacket();
@@ -190,6 +194,7 @@ void mainloop()
         bleCrazyfliesReleaseRxPacket(packet);
       }
     }
+#endif
 
 #ifndef CONT_WAVE_TEST
 
@@ -292,6 +297,7 @@ static void handleSyslinkEvents(bool slReceived)
           bzero(slRxPacket.data, SYSLINK_MTU);
         }
 
+#ifdef BLE
         if (bleEnabled) {
           if (slRxPacket.length < SYSLINK_MTU) {
             static EsbPacket pk;
@@ -300,6 +306,7 @@ static void handleSyslinkEvents(bool slReceived)
             bleCrazyfliesSendPacket(&pk);
           }
         }
+#endif
 
         break;
       case SYSLINK_RADIO_CHANNEL:
@@ -559,9 +566,11 @@ static void handleBootloaderCmd(struct esbPacket_s *packet)
       memcpy(&(txpk.data[3]), (uint32_t*)NRF_FICR->DEVICEADDR, 6);
 
       txpk.size = 9;
+#ifdef BLE
       if (bleEnabled) {
         bleCrazyfliesSendPacket(&txpk);
       }
+#endif
 
       if (esbCanTxPacket()) {
         struct esbPacket_s *pk = esbGetTxPacket();
@@ -580,7 +589,9 @@ static void handleBootloaderCmd(struct esbPacket_s *packet)
           NRF_POWER->GPREGRET |= 0x20U;
         }
         if (bleEnabled) {
+#ifdef BLE
           sd_nvic_SystemReset();
+#endif
         } else {
           NVIC_SystemReset();
         }
@@ -626,9 +637,12 @@ static void handleBootloaderCmd(struct esbPacket_s *packet)
 }
 
 static void disableBle() {
+#ifdef BLE
   if (bleEnabled) {
       sd_softdevice_disable();
-      bleEnabled = 0;
       esbInit();
   }
+#endif
+
+    bleEnabled = 0;
 }
