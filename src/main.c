@@ -639,10 +639,10 @@ static void handleBootloaderCmd(struct esbPacket_s *packet)
 static void disableBle() {
 #ifdef BLE
   if (bleEnabled) {
-      sd_softdevice_disable();
-      esbInit();
+    sd_softdevice_disable();
+    bleEnabled = 0;
+    esbInit();
   }
 #endif
-
-    bleEnabled = 0;
+  bleEnabled = 0;
 }
