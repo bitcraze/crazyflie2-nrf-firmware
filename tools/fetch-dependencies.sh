@@ -24,7 +24,10 @@ unzip -o nrf5sdk1230.zip -d nrf5sdk
 mv nrf5sdk/nRF5_SDK_12.3.0_d7731ad/* nrf5sdk
 rmdir nrf5sdk/nRF5_SDK_12.3.0_d7731ad
 
+# convert line endings to unix
+mv nrf5sdk/components/toolchain/gcc/Makefile.posix nrf5sdk/components/toolchain/gcc/Makefile.posix.orig
+tr -d '\r' < nrf5sdk/components/toolchain/gcc/Makefile.posix.orig > nrf5sdk/components/toolchain/gcc/Makefile.posix
 # Patch SDK compiler configuration
-patch -p0 -l --binary < ../tools/nrf5sdk.patch
+patch -p0 < ../tools/nrf5sdk.patch
 
 popd
