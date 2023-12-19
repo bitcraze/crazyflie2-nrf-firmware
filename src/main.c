@@ -339,6 +339,12 @@ static void gap_params_init(void)
     }
    }*/
 
+static void handle_crazyflie_data(ble_crazyflie_t *p_crazyflie, uint8_t *p_data, uint16_t length) {
+    NRF_LOG_INFO("CRTP packet received of length %d width first byte %02x\n", length, p_data[0]);
+    uint8_t packet[31] = {0xff, 0x42};
+    ble_crazyflie_send_packet(p_crazyflie, packet, 31);
+}
+
 /**@brief Function for initializing services that will be used by the application.
  */
 static void services_init(void)
@@ -367,7 +373,10 @@ static void services_init(void)
        APP_ERROR_CHECK(err_code);
      */
     uint32_t err_code;
-    ble_crazyflie_init_t crazyflie_init;
+    ble_crazyflie_init_t crazyflie_init = {
+        .data_handler = handle_crazyflie_data,
+    };
+
 
     err_code = ble_crazyflie_init(&m_crazyflie, &crazyflie_init);
     APP_ERROR_CHECK(err_code);
@@ -595,6 +604,7 @@ static void ble_evt_dispatch(ble_evt_t * p_ble_evt)
     bsp_btn_ble_on_ble_evt(p_ble_evt);
     on_ble_evt(p_ble_evt);
     ble_advertising_on_ble_evt(p_ble_evt);
+    ble_crazyflie_on_ble_evt(&m_crazyflie, p_ble_evt);
     /*YOUR_JOB add calls to _on_ble_evt functions from each service your application is using
        ble_xxs_on_ble_evt(&m_xxs, p_ble_evt);
        ble_yys_on_ble_evt(&m_yys, p_ble_evt);
