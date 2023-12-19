@@ -82,6 +82,8 @@
 #include "ble_advertising.h"
 #include "ble_conn_state.h"
 
+#include "ble_crazyflie.h"
+
 #define NRF_LOG_MODULE_NAME "APP"
 #include "nrf_log.h"
 #include "nrf_log_ctrl.h"
@@ -97,7 +99,7 @@
 #define CENTRAL_LINK_COUNT              0                                           /**< Number of central links used by the application. When changing this number remember to adjust the RAM settings*/
 #define PERIPHERAL_LINK_COUNT           1                                           /**< Number of peripheral links used by the application. When changing this number remember to adjust the RAM settings*/
 
-#define DEVICE_NAME                     "Crazyflie2"                                /**< Name of device. Will be included in the advertising data. */
+#define DEVICE_NAME                     "Crazyflie"                                /**< Name of device. Will be included in the advertising data. */
 #define MANUFACTURER_NAME               "Bitcraze AB"                               /**< Manufacturer. Will be passed to Device Information Service. */
 #define APP_ADV_INTERVAL                300                                         /**< The advertising interval (in units of 0.625 ms. This value corresponds to 187.5 ms). */
 #define APP_ADV_TIMEOUT_IN_SECONDS      180                                         /**< The advertising timeout in units of seconds. */
@@ -131,6 +133,7 @@ static uint16_t m_conn_handle = BLE_CONN_HANDLE_INVALID;                        
    static ble_xx_service_t                     m_xxs;
    static ble_yy_service_t                     m_yys;
  */
+static ble_crazyflie_t m_crazyflie;
 
 // YOUR_JOB: Use UUIDs for service(s) used in your application.
 static ble_uuid_t m_adv_uuids[] = {{BLE_UUID_DEVICE_INFORMATION_SERVICE, BLE_UUID_TYPE_BLE}}; /**< Universally unique service identifiers. */
@@ -363,6 +366,12 @@ static void services_init(void)
        err_code = ble_yy_service_init(&yys_init, &yy_init);
        APP_ERROR_CHECK(err_code);
      */
+    uint32_t err_code;
+    ble_crazyflie_init_t crazyflie_init;
+
+    err_code = ble_crazyflie_init(&m_crazyflie, &crazyflie_init);
+    APP_ERROR_CHECK(err_code);
+
 }
 
 
