@@ -34,6 +34,7 @@ static void on_write(ble_crazyflie_t* p_crazyflie, ble_evt_t const* p_ble_evt) {
 
 static void on_connect(ble_crazyflie_t* p_crazyflie, ble_evt_t const* p_ble_evt) {
     p_crazyflie->conn_handle = p_ble_evt->evt.gap_evt.conn_handle;
+    sd_ble_tx_packet_count_get(p_crazyflie->conn_handle, &p_crazyflie->tx_pk_free);
 }
 
 static void on_disconnect(ble_crazyflie_t* p_crazyflie, ble_evt_t const* p_ble_evt) {
@@ -248,6 +249,9 @@ void ble_crazyflie_on_ble_evt(ble_crazyflie_t *p_crazyflie, ble_evt_t const *p_b
         case BLE_GATTS_EVT_WRITE:
             on_write(p_crazyflie, p_ble_evt);
             break;
+        case BLE_EVT_TX_COMPLETE:
+            p_crazyflie->tx_pk_free++;
+            break;
         default:
             break;
     }
@@ -278,6 +282,7 @@ static uint32_t send_crtpdown_notification(ble_crazyflie_t *p_crazyflie, uint8_t
     err_code = sd_ble_gatts_hvx(p_crazyflie->conn_handle, &hvx_params);
     if (err_code == NRF_SUCCESS) {
         NRF_LOG_INFO("Sent %d bytes\n", length);
+        p_crazyflie->tx_pk_free--;
     } else {
         NRF_LOG_ERROR("Failed to send %d bytes: %d\n", length, err_code);
     }
@@ -293,9 +298,15 @@ uint32_t ble_crazyflie_send_packet(ble_crazyflie_t *p_crazyflie, uint8_t *p_data
         return NRF_ERROR_INVALID_PARAM;
     }
 
+    NRF_LOG_DEBUG("Tx Pk free: %d\n", p_crazyflie->tx_pk_free);
+
     packet[0] = 0x80 | length;
 
     if (length > GATT_MTU_SIZE_DEFAULT - 3 - 1) {
+        if (p_crazyflie->tx_pk_free < 2) {
+            return NRF_ERROR_NO_MEM;
+        }
+
         memcpy(packet+1, p_data, GATT_MTU_SIZE_DEFAULT - 3 - 1);
         err_code = send_crtpdown_notification(p_crazyflie, packet, GATT_MTU_SIZE_DEFAULT - 3 - 1 + 1);
         VERIFY_SUCCESS(err_code);
@@ -303,6 +314,10 @@ uint32_t ble_crazyflie_send_packet(ble_crazyflie_t *p_crazyflie, uint8_t *p_data
         err_code = send_crtpdown_notification(p_crazyflie, packet, length - (GATT_MTU_SIZE_DEFAULT - 3 - 1) + 1);
         VERIFY_SUCCESS(err_code);
     } else {
+        if (p_crazyflie->tx_pk_free < 1) {
+            return NRF_ERROR_NO_MEM;
+        }
+
         memcpy(packet+1, p_data, length);
         err_code = send_crtpdown_notification(p_crazyflie, packet, length+1);
         VERIFY_SUCCESS(err_code);

@@ -341,8 +341,18 @@ static void gap_params_init(void)
 
 static void handle_crazyflie_data(ble_crazyflie_t *p_crazyflie, uint8_t *p_data, uint16_t length) {
     NRF_LOG_INFO("CRTP packet received of length %d width first byte %02x\n", length, p_data[0]);
+    uint32_t error_code;
+
     uint8_t packet[31] = {0xff, 0x42};
-    ble_crazyflie_send_packet(p_crazyflie, packet, 31);
+    error_code = ble_crazyflie_send_packet(p_crazyflie, packet, 31);
+    if (error_code != NRF_SUCCESS) {
+        NRF_LOG_INFO("Error sending packet: %d\n", error_code);
+    }
+
+    error_code = ble_crazyflie_send_packet(p_crazyflie, packet, 31);
+    if (error_code != NRF_SUCCESS) {
+        NRF_LOG_INFO("Error sending packet: %d\n", error_code);
+    }
 }
 
 /**@brief Function for initializing services that will be used by the application.

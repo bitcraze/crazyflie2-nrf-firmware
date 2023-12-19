@@ -22,6 +22,8 @@ struct ble_crazyflie_s {
     uint8_t packet_length;
     uint8_t packet_index;
     ble_crazyflie_data_handler_t data_handler;
+
+    uint8_t tx_pk_free;
 };
 
 typedef struct {
