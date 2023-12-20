@@ -48,7 +48,7 @@ The Cortex Debug Configuration for nRF51 debugging is replaced with:
         // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
         "version": "0.2.0",
         "configurations": [
-            
+            {
                 "name": "nRF51 Debug",
                 "cwd": "${workspaceRoot}",
                 "executable": "./cf2_nrf.elf",
@@ -61,7 +61,7 @@ The Cortex Debug Configuration for nRF51 debugging is replaced with:
                     "interface/stlink-v2.cfg",
                     "target/nrf51.cfg"
                 ],
-                "runToMain": true,
+                "runToEntryPoint": "true",
                 "preLaunchCommands": [
                     "set mem inaccessible-by-default off",
                     "enable breakpoint",
