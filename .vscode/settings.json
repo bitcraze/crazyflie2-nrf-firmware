@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "*.c": "c",
+        "nrf_atomic.h": "c",
+        "type_traits": "cpp",
+        "softdevice_handler.h": "c"
+    }
+}

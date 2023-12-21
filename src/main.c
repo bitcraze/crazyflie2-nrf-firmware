@@ -69,6 +69,7 @@
 #include "boards.h"
 #include "softdevice_handler.h"
 #include "app_timer.h"
+#include "app_mailbox.h"
 #include "fstorage.h"
 #include "fds.h"
 #include "peer_manager.h"
@@ -83,6 +84,8 @@
 #include "ble_conn_state.h"
 
 #include "ble_crazyflie.h"
+
+#include "syslink.h"
 
 #define NRF_LOG_MODULE_NAME "APP"
 #include "nrf_log.h"
@@ -134,6 +137,9 @@ static uint16_t m_conn_handle = BLE_CONN_HANDLE_INVALID;                        
    static ble_yy_service_t                     m_yys;
  */
 static ble_crazyflie_t m_crazyflie;
+
+/* Up to 4 full packets can be buffered there*/
+APP_MAILBOX_DEF(m_uplink, 32*4, sizeof(uint8_t));
 
 // YOUR_JOB: Use UUIDs for service(s) used in your application.
 static ble_uuid_t m_adv_uuids[] = {{BLE_UUID_DEVICE_INFORMATION_SERVICE, BLE_UUID_TYPE_BLE}}; /**< Universally unique service identifiers. */
@@ -298,9 +304,9 @@ static void gap_params_init(void)
                                           strlen(DEVICE_NAME));
     APP_ERROR_CHECK(err_code);
 
-    /* YOUR_JOB: Use an appearance value matching the application's use case.
-       err_code = sd_ble_gap_appearance_set(BLE_APPEARANCE_);
-       APP_ERROR_CHECK(err_code); */
+    // YOUR_JOB: Use an appearance value matching the application's use case.
+    err_code = sd_ble_gap_appearance_set(BLE_APPEARANCE_GENERIC_REMOTE_CONTROL);
+    APP_ERROR_CHECK(err_code);
 
     memset(&gap_conn_params, 0, sizeof(gap_conn_params));
 
@@ -343,15 +349,20 @@ static void handle_crazyflie_data(ble_crazyflie_t *p_crazyflie, uint8_t *p_data,
     NRF_LOG_INFO("CRTP packet received of length %d width first byte %02x\n", length, p_data[0]);
     uint32_t error_code;
 
+    error_code = app_mailbox_sized_put(&m_uplink, p_data, length);
+    if (error_code != NRF_SUCCESS) {
+        NRF_LOG_INFO("Error putting packet in mailbox: %x\n", error_code);
+    }
+
     uint8_t packet[31] = {0xff, 0x42};
     error_code = ble_crazyflie_send_packet(p_crazyflie, packet, 31);
     if (error_code != NRF_SUCCESS) {
-        NRF_LOG_INFO("Error sending packet: %d\n", error_code);
+        NRF_LOG_INFO("Error sending packet: %x\n", error_code);
     }
 
     error_code = ble_crazyflie_send_packet(p_crazyflie, packet, 31);
     if (error_code != NRF_SUCCESS) {
-        NRF_LOG_INFO("Error sending packet: %d\n", error_code);
+        NRF_LOG_INFO("Error sending packet: %x\n", error_code);
     }
 }
 
@@ -811,17 +822,6 @@ static void buttons_leds_init(bool * p_erase_bonds)
     *p_erase_bonds = (startup_event == BSP_EVENT_CLEAR_BONDING_DATA);
 }
 
-
-/**@brief Function for the Power manager.
- */
-static void power_manage(void)
-{
-    uint32_t err_code = sd_app_evt_wait();
-
-    APP_ERROR_CHECK(err_code);
-}
-
-
 /**@brief Function for starting advertising.
  */
 static void advertising_start(void)
@@ -830,7 +830,6 @@ static void advertising_start(void)
 
     APP_ERROR_CHECK(err_code);
 }
-
 
 /**@brief Function for application main entry.
  */
@@ -856,6 +855,12 @@ int main(void)
     services_init();
     conn_params_init();
 
+    err_code = syslinkInit();
+    APP_ERROR_CHECK(err_code);
+
+    err_code = app_mailbox_create(&m_uplink);
+    APP_ERROR_CHECK(err_code);
+
     // Start execution.
     NRF_LOG_INFO("Template started\r\n");
     application_timers_start();
@@ -863,11 +868,21 @@ int main(void)
     APP_ERROR_CHECK(err_code);
 
     // Enter main loop.
+    static struct syslinkPacket syslink_packet;
     for (;;)
     {
-        if (NRF_LOG_PROCESS() == false)
-        {
-            power_manage();
+        NRF_LOG_PROCESS();
+
+        uint16_t length;
+        if (app_mailbox_sized_get(&m_uplink, syslink_packet.data, &length) == NRF_SUCCESS) {
+            syslink_packet.length = length;
+            syslink_packet.type = SYSLINK_RADIO_RAW;
+            err_code = syslinkSend(&syslink_packet);
+            APP_ERROR_CHECK(err_code);
+        }
+
+        if (syslinkReceive(&syslink_packet) == NRF_SUCCESS) {
+            // Todo: match and use packet (ie. fw to BLE for now...)
         }
     }
 }
