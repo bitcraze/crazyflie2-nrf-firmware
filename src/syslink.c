@@ -94,7 +94,7 @@ static void uart_on_receive(uint8_t *data, int length) {
         received_packet.length = data[index++];
         cksum_a += received_packet.length;
         cksum_b += cksum_a;
-        to_fetch_next = length + 2;
+        to_fetch_next = received_packet.length + 2;
         step = 0;
         if (received_packet.length > 0 && received_packet.length <= SYSLINK_MTU)
           state = state_data;
@@ -232,7 +232,7 @@ uint32_t syslinkInit() {
       .parity = NRF_UART_PARITY_EXCLUDED,
       .pseltxd = 9,
       .pselrxd = 11,
-      .pselcts = NRF_UART_PSEL_DISCONNECTED, // 10,
+      .pselcts = 10,
       .pselrts = 8, 
   };
 
