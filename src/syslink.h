@@ -62,6 +62,13 @@ bool syslinkReceive(struct syslinkPacket *packet);
 uint32_t syslinkSend(struct syslinkPacket *packet);
 
 /**
+ * Check if syslink is busy sending a packet. If it is, a call to syslinkSend will fail with NRF_ERROR_BUSY.
+ *
+ * @return true if busy, false otherwise.
+ */
+bool syslink_is_tx_busy();
+
+/**
  * Reset syslink state machine.
  */
 void syslinkReset();

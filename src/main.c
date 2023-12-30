@@ -874,7 +874,7 @@ int main(void)
         NRF_LOG_PROCESS();
 
         uint16_t length;
-        if (app_mailbox_sized_get(&m_uplink, syslink_packet.data, &length) == NRF_SUCCESS) {
+        if ((app_mailbox_sized_get(&m_uplink, syslink_packet.data, &length) == NRF_SUCCESS) && !syslink_is_tx_busy()) {
             syslink_packet.length = length;
             syslink_packet.type = SYSLINK_RADIO_RAW;
             err_code = syslinkSend(&syslink_packet);

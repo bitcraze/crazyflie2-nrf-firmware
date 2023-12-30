@@ -1,11 +1,17 @@
 PROJECT_NAME     := crazyflie2_nrf_firmware
-TARGETS          := nrf51422_xxac
+TARGETS          := nrf51422_xxaa
 OUTPUT_DIRECTORY := _build
+
+ifeq ($(DEVBOARD),1)
+BOARD ?= PCA10028
+else
+BOARD ?= CUSTOM
+endif
 
 SDK_ROOT := vendor/nrf5sdk
 PROJ_DIR := src
 
-$(OUTPUT_DIRECTORY)/nrf51422_xxac.out: \
+$(OUTPUT_DIRECTORY)/nrf51422_xxaa.out: \
   LINKER_SCRIPT  := crazyflie2_nrf_firmware.ld
 
 # Source files common to all targets
@@ -171,7 +177,7 @@ INC_FOLDERS += \
 LIB_FILES += \
 
 # C flags common to all targets
-CFLAGS += -DBOARD_PCA10028
+CFLAGS += -DBOARD_${BOARD}
 CFLAGS += -DSOFTDEVICE_PRESENT
 CFLAGS += -DNRF51
 CFLAGS += -DS130
@@ -197,7 +203,7 @@ CXXFLAGS += \
 
 # Assembler flags common to all targets
 ASMFLAGS += -x assembler-with-cpp
-ASMFLAGS += -DBOARD_PCA10028
+ASMFLAGS += -DBOARD_${BOARD}
 ASMFLAGS += -DSOFTDEVICE_PRESENT
 ASMFLAGS += -DNRF51
 ASMFLAGS += -DS130
@@ -205,6 +211,8 @@ ASMFLAGS += -DBLE_STACK_SUPPORT_REQD
 ASMFLAGS += -DSWI_DISABLE0
 ASMFLAGS += -DNRF51422
 ASMFLAGS += -DNRF_SD_BLE_API_VERSION=2
+ASMFLAGS += -D__STACK_SIZE=512
+ASMFLAGS += -D__HEAP_SIZE=512
 
 # Linker flags
 LDFLAGS += -mthumb -mabi=aapcs -L $(TEMPLATE_PATH) -T$(LINKER_SCRIPT)
@@ -218,12 +226,12 @@ LDFLAGS += --specs=nano.specs -lc -lnosys
 .PHONY: $(TARGETS) default all clean help flash flash_softdevice
 
 # Default target - first one defined
-default: nrf51422_xxac
+default: nrf51422_xxaa
 
 # Print all targets that can be built
 help:
 	@echo following targets are available:
-	@echo 	nrf51422_xxac
+	@echo 	nrf51422_xxaa
 
 TEMPLATE_PATH := $(SDK_ROOT)/components/toolchain/gcc
 
@@ -232,7 +240,7 @@ include $(TEMPLATE_PATH)/Makefile.common
 $(foreach target, $(TARGETS), $(call define_target, $(target)))
 
 # Flash the program
-flash: $(OUTPUT_DIRECTORY)/nrf51422_xxac.hex
+flash: $(OUTPUT_DIRECTORY)/nrf51422_xxaa.hex
 	@echo Flashing: $<
 	nrfjprog --program $< -f nrf51 --sectorerase
 	nrfjprog --reset -f nrf51

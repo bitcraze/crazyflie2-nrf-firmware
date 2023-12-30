@@ -26,6 +26,7 @@
 #include <nrf.h>
 #include "sdk_common.h"
 #include "nrf_nvic.h"
+#include "boards.h"
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -193,9 +194,7 @@ uint32_t syslinkSend(struct syslinkPacket *packet)
     tx_buffer[5+packet->length] = cksum_b;
     
     // Send buffer
-    nrf_drv_uart_tx(&m_uart, tx_buffer, 6+packet->length);
-
-    return NRF_SUCCESS;
+    return nrf_drv_uart_tx(&m_uart, tx_buffer, 6+packet->length);
   } else {
     return NRF_ERROR_BUSY;
   }
@@ -217,6 +216,8 @@ static void uart_evt_handler(nrf_drv_uart_event_t * p_event, void * p_context) {
     case NRF_DRV_UART_EVT_TX_DONE:
       break;
     case NRF_DRV_UART_EVT_ERROR:
+      // Relaunch the pump ...
+      nrf_drv_uart_rx(&m_uart, rx_buffer, 1);
       break;
     default:
       break;
@@ -227,13 +228,13 @@ uint32_t syslinkInit() {
   uint32_t err_code;
   static nrf_drv_uart_config_t config = {
       .baudrate = UART_BAUDRATE_BAUDRATE_Baud1M,
-      .hwfc = NRF_UART_HWFC_ENABLED,
+      .hwfc = HWFC,
       .interrupt_priority = 1,
       .parity = NRF_UART_PARITY_EXCLUDED,
-      .pseltxd = 9,
-      .pselrxd = 11,
-      .pselcts = 10,
-      .pselrts = 8, 
+      .pseltxd = TX_PIN_NUMBER,
+      .pselrxd = RX_PIN_NUMBER,
+      .pselcts = CTS_PIN_NUMBER,
+      .pselrts = RTS_PIN_NUMBER, 
   };
 
   err_code = nrf_drv_uart_init(&m_uart, &config, uart_evt_handler);
@@ -259,4 +260,8 @@ bool syslinkReceive(struct syslinkPacket *packet) {
   } else {
     return false;
   }
+}
+
+bool syslink_is_tx_busy() {
+  return nrf_drv_uart_tx_in_progress(&m_uart) == true;
 }
