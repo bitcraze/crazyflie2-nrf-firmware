@@ -87,6 +87,8 @@
 
 #include "syslink.h"
 #include "crazyflie2_pm.h"
+#include "esb.h"
+#include "timeslot.h"
 
 #define NRF_LOG_MODULE_NAME "APP"
 #include "nrf_log.h"
@@ -865,6 +867,9 @@ int main(void)
     NRF_LOG_INFO("Template started\r\n");
     application_timers_start();
     err_code = ble_advertising_start(BLE_ADV_MODE_FAST);
+    APP_ERROR_CHECK(err_code);
+
+    err_code = timeslot_start();
     APP_ERROR_CHECK(err_code);
 
     // Enter main loop.

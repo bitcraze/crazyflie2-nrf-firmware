@@ -44,6 +44,8 @@ SRC_FILES += \
   $(PROJ_DIR)/ble_crazyflie.c \
   $(PROJ_DIR)/syslink.c \
   $(PROJ_DIR)/crazyflie2_pm.c \
+  $(PROJ_DIR)/esb.c \
+  $(PROJ_DIR)/timeslot.c \
   $(SDK_ROOT)/external/segger_rtt/RTT_Syscalls_GCC.c \
   $(SDK_ROOT)/external/segger_rtt/SEGGER_RTT.c \
   $(SDK_ROOT)/external/segger_rtt/SEGGER_RTT_printf.c \
