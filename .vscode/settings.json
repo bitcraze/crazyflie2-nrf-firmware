@@ -4,7 +4,8 @@
         "nrf_atomic.h": "c",
         "type_traits": "cpp",
         "softdevice_handler.h": "c",
-        "app_button.h": "c"
+        "app_button.h": "c",
+        "crazyflie2_pm.h": "c"
     },
     "cortex-debug.variableUseNaturalFormat": false
 }

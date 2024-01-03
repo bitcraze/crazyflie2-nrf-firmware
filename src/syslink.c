@@ -35,6 +35,9 @@
 #include "nrf_drv_uart.h"
 #include "atomic.h"
 
+#define NRF_LOG_MODULE_NAME "SYSLINK"
+#include "nrf_log.h"
+
 /* Frame format:
  * +----+-----+------+-----+=============+-----+-----+
  * |  START   | TYPE | LEN | DATA        |   CKSUM   |
@@ -54,16 +57,16 @@
 
 static nrf_drv_uart_t m_uart = NRF_DRV_UART_INSTANCE(0);
 
-static uint8_t tx_buffer[SYSLINK_MTU + 6];
+static uint8_t m_tx_buffer[SYSLINK_MTU + 6];
 
 static enum {state_first_start, state_second_start, state_length, state_type, state_data, state_cksum1, state_cksum2, state_done} state = state_first_start;
 
-static uint8_t syslinkRxCheckSum1ErrorCnt;
-static uint8_t syslinkRxCheckSum2ErrorCnt;
+static uint8_t m_syslinkRxCheckSum1ErrorCnt;
+static uint8_t m_syslinkRxCheckSum2ErrorCnt;
 
-static struct syslinkPacket received_packet;
-static atomic_t received_packet_valid = 0;
-static uint8_t rx_buffer[SYSLINK_MTU];
+static struct syslinkPacket m_received_packet;
+static bool m_received_packet_valid = false;
+static uint8_t m_rx_buffer[SYSLINK_MTU];
 
 void syslinkReset() {
   state = state_first_start;
@@ -77,6 +80,7 @@ static void uart_on_receive(uint8_t *data, int length) {
   static int step;
 
   while (index < length) {
+    NRF_LOG_DEBUG("state: %d, index: %d, data: %02x\n", state, index, data[index]);
     switch(state)
     {
       case state_first_start:
@@ -86,20 +90,20 @@ static void uart_on_receive(uint8_t *data, int length) {
         state = (data[index++] == START_BYTE2) ? state_type : state_first_start;
         break;
       case state_type:
-        received_packet.type = data[index++];
-        cksum_a = received_packet.type;
+        m_received_packet.type = data[index++];
+        cksum_a = m_received_packet.type;
         cksum_b = cksum_a;
         state = state_length;
         break;
       case state_length:
-        received_packet.length = data[index++];
-        cksum_a += received_packet.length;
+        m_received_packet.length = data[index++];
+        cksum_a += m_received_packet.length;
         cksum_b += cksum_a;
-        to_fetch_next = received_packet.length + 2;
+        to_fetch_next = m_received_packet.length + 2;
         step = 0;
-        if (received_packet.length > 0 && received_packet.length <= SYSLINK_MTU)
+        if (m_received_packet.length > 0 && m_received_packet.length <= SYSLINK_MTU)
           state = state_data;
-        else if (received_packet.length > SYSLINK_MTU)
+        else if (m_received_packet.length > SYSLINK_MTU)
           state = state_first_start;
         else
           state = state_cksum1;
@@ -107,13 +111,13 @@ static void uart_on_receive(uint8_t *data, int length) {
       case state_data:
         if (step < SYSLINK_MTU)
         {
-          received_packet.data[step] = data[index++];
-          cksum_a += received_packet.data[step];
+          m_received_packet.data[step] = data[index++];
+          cksum_a += m_received_packet.data[step];
           cksum_b += cksum_a;
         }
         step++;
-        to_fetch_next = received_packet.length - step + 2;
-        if(step >= received_packet.length) {
+        to_fetch_next = m_received_packet.length - step + 2;
+        if(step >= m_received_packet.length) {
           state = state_cksum1;
         }
         break;
@@ -125,7 +129,7 @@ static void uart_on_receive(uint8_t *data, int length) {
         }
         else
         {  // Wrong checksum
-          syslinkRxCheckSum1ErrorCnt++;
+          m_syslinkRxCheckSum1ErrorCnt++;
           state = state_first_start;
           to_fetch_next = 5;
 #ifdef SYSLINK_CKSUM_MON
@@ -143,7 +147,7 @@ static void uart_on_receive(uint8_t *data, int length) {
         }
         else
         {  // Wrong checksum
-          syslinkRxCheckSum2ErrorCnt++;
+          m_syslinkRxCheckSum2ErrorCnt++;
           state = state_first_start;
           step = 0;
           to_fetch_next = 4;
@@ -156,16 +160,14 @@ static void uart_on_receive(uint8_t *data, int length) {
         }
         break;
       case state_done:
+        state = state_first_start;
+        m_received_packet_valid = true;
         break;
     }
   }
 
-  if (state != state_done) {
-    nrf_drv_uart_rx(&m_uart, rx_buffer, to_fetch_next);
-  } else {
-    state = state_first_start;
-    received_packet_valid = true;
-  }
+  // Setup transfer of next packet
+  nrf_drv_uart_rx(&m_uart, m_rx_buffer, to_fetch_next);
 }
 
 uint32_t syslinkSend(struct syslinkPacket *packet)
@@ -177,35 +179,42 @@ uint32_t syslinkSend(struct syslinkPacket *packet)
   if (!nrf_drv_uart_tx_in_progress(&m_uart))
   {
     // construct packet in m_tx_buffer
-    memcpy(tx_buffer, START, 2);
-    tx_buffer[2] = packet->type;
+    memcpy(m_tx_buffer, START, 2);
+    m_tx_buffer[2] = packet->type;
     cksum_a += packet->type;
     cksum_b += cksum_a;
-    tx_buffer[3] = packet->length;
+    m_tx_buffer[3] = packet->length;
     cksum_a += packet->length;
     cksum_b += cksum_a;
-    memcpy(&tx_buffer[4], packet->data, packet->length);
+    memcpy(&m_tx_buffer[4], packet->data, packet->length);
     for (i=0; i < packet->length; i++)
     {
       cksum_a += packet->data[i];
       cksum_b += cksum_a;
     }
-    tx_buffer[4+packet->length] = cksum_a;
-    tx_buffer[5+packet->length] = cksum_b;
+    m_tx_buffer[4+packet->length] = cksum_a;
+    m_tx_buffer[5+packet->length] = cksum_b;
     
     // Send buffer
-    return nrf_drv_uart_tx(&m_uart, tx_buffer, 6+packet->length);
+    return nrf_drv_uart_tx(&m_uart, m_tx_buffer, 6+packet->length);
   } else {
     return NRF_ERROR_BUSY;
   }
 }
 
+uint32_t syslinkSendBlocking(struct syslinkPacket *packet) {
+  while (syslink_is_tx_busy()) {
+    // Wait for previous packet to be sent
+  }
+  return syslinkSend(packet);
+}
+
 uint8_t syslinkGetRxCheckSum1ErrorCnt() {
-  return syslinkRxCheckSum1ErrorCnt;
+  return m_syslinkRxCheckSum1ErrorCnt;
 }
 
 uint8_t syslinkGetRxCheckSum2ErrorCnt() {
-  return syslinkRxCheckSum2ErrorCnt;
+  return m_syslinkRxCheckSum2ErrorCnt;
 }
 
 static void uart_evt_handler(nrf_drv_uart_event_t * p_event, void * p_context) {
@@ -217,7 +226,8 @@ static void uart_evt_handler(nrf_drv_uart_event_t * p_event, void * p_context) {
       break;
     case NRF_DRV_UART_EVT_ERROR:
       // Relaunch the pump ...
-      nrf_drv_uart_rx(&m_uart, rx_buffer, 1);
+      int mask = p_event->data.error.error_mask;
+      NRF_LOG_ERROR("UART error: 0x%02X\n", mask);
       break;
     default:
       break;
@@ -240,21 +250,24 @@ uint32_t syslinkInit() {
   err_code = nrf_drv_uart_init(&m_uart, &config, uart_evt_handler);
   VERIFY_SUCCESS(err_code);
 
+  // Configure RX pin as input with pull-up, make sure we will not se a break condition if the STM32 is not powered
+  nrf_gpio_cfg_input(config.pselrxd, NRF_GPIO_PIN_PULLUP);
+
   // Packet reception, start with receiving next header (2 start + type + length)
   // If we are not yet at the start of a packet, the receive state machine will synchronize itself ...
   nrf_drv_uart_rx_enable(&m_uart);
-  nrf_drv_uart_rx(&m_uart, rx_buffer, 4);
+  nrf_drv_uart_rx(&m_uart, m_rx_buffer, 4);
 
   return NRF_SUCCESS;
 }
 
 bool syslinkReceive(struct syslinkPacket *packet) {
-  if (received_packet_valid) {
-    memcpy(packet, &received_packet, sizeof(struct syslinkPacket));
-    received_packet_valid = false;
+  if (m_received_packet_valid) {
+    memcpy(packet, &m_received_packet, sizeof(struct syslinkPacket));
+    m_received_packet_valid = false;
 
     // Restart packet reception, start with receiving next header (2 start + type + length)
-    nrf_drv_uart_rx(&m_uart, rx_buffer, 4);
+    nrf_drv_uart_rx(&m_uart, m_rx_buffer, 4);
 
     return true;
   } else {

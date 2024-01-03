@@ -86,6 +86,7 @@
 #include "ble_crazyflie.h"
 
 #include "syslink.h"
+#include "crazyflie2_pm.h"
 
 #define NRF_LOG_MODULE_NAME "APP"
 #include "nrf_log.h"
@@ -110,8 +111,8 @@
 #define APP_TIMER_PRESCALER             0                                           /**< Value of the RTC1 PRESCALER register. */
 #define APP_TIMER_OP_QUEUE_SIZE         4                                           /**< Size of timer operation queues. */
 
-#define MIN_CONN_INTERVAL               MSEC_TO_UNITS(100, UNIT_1_25_MS)            /**< Minimum acceptable connection interval (0.1 seconds). */
-#define MAX_CONN_INTERVAL               MSEC_TO_UNITS(200, UNIT_1_25_MS)            /**< Maximum acceptable connection interval (0.2 second). */
+#define MIN_CONN_INTERVAL               MSEC_TO_UNITS(7.5, UNIT_1_25_MS)            /**< Minimum acceptable connection interval (0.1 seconds). */
+#define MAX_CONN_INTERVAL               MSEC_TO_UNITS(100, UNIT_1_25_MS)            /**< Maximum acceptable connection interval (0.2 second). */
 #define SLAVE_LATENCY                   0                                           /**< Slave latency. */
 #define CONN_SUP_TIMEOUT                MSEC_TO_UNITS(4000, UNIT_10_MS)             /**< Connection supervisory timeout (4 seconds). */
 
@@ -352,17 +353,6 @@ static void handle_crazyflie_data(ble_crazyflie_t *p_crazyflie, uint8_t *p_data,
     error_code = app_mailbox_sized_put(&m_uplink, p_data, length);
     if (error_code != NRF_SUCCESS) {
         NRF_LOG_INFO("Error putting packet in mailbox: %x\n", error_code);
-    }
-
-    uint8_t packet[31] = {0xff, 0x42};
-    error_code = ble_crazyflie_send_packet(p_crazyflie, packet, 31);
-    if (error_code != NRF_SUCCESS) {
-        NRF_LOG_INFO("Error sending packet: %x\n", error_code);
-    }
-
-    error_code = ble_crazyflie_send_packet(p_crazyflie, packet, 31);
-    if (error_code != NRF_SUCCESS) {
-        NRF_LOG_INFO("Error sending packet: %x\n", error_code);
     }
 }
 
@@ -831,6 +821,9 @@ static void advertising_start(void)
     APP_ERROR_CHECK(err_code);
 }
 
+static struct syslinkPacket m_syslink_packet;
+static void handle_syslink_packet(struct syslinkPacket *packet);
+
 /**@brief Function for application main entry.
  */
 int main(void)
@@ -842,11 +835,15 @@ int main(void)
     err_code = NRF_LOG_INIT(NULL);
     APP_ERROR_CHECK(err_code);
 
+    // Light up LED
+    nrf_gpio_cfg_output(LED_1);
+    nrf_gpio_pin_write(LED_1, LEDS_ACTIVE_STATE);
+
     timers_init();
-    buttons_leds_init(&erase_bonds);
+    if(0) buttons_leds_init(&erase_bonds);
     ble_stack_init();
-    peer_manager_init(erase_bonds);
-    if (erase_bonds == true)
+    if (0) peer_manager_init(erase_bonds);
+    if (0 && erase_bonds == true)
     {
         NRF_LOG_INFO("Bonds erased!\r\n");
     }
@@ -858,6 +855,9 @@ int main(void)
     err_code = syslinkInit();
     APP_ERROR_CHECK(err_code);
 
+    crazyflie2_pm_init();
+    crazyflie2_pm_set_state(PM_STATE_SYSTEM_ON);
+
     err_code = app_mailbox_create(&m_uplink);
     APP_ERROR_CHECK(err_code);
 
@@ -868,22 +868,58 @@ int main(void)
     APP_ERROR_CHECK(err_code);
 
     // Enter main loop.
-    static struct syslinkPacket syslink_packet;
     for (;;)
     {
         NRF_LOG_PROCESS();
 
         uint16_t length;
-        if ((app_mailbox_sized_get(&m_uplink, syslink_packet.data, &length) == NRF_SUCCESS) && !syslink_is_tx_busy()) {
-            syslink_packet.length = length;
-            syslink_packet.type = SYSLINK_RADIO_RAW;
-            err_code = syslinkSend(&syslink_packet);
+        if ((app_mailbox_sized_get(&m_uplink, m_syslink_packet.data, &length) == NRF_SUCCESS) && !syslink_is_tx_busy()) {
+            m_syslink_packet.length = length;
+            m_syslink_packet.type = SYSLINK_RADIO_RAW;
+            err_code = syslinkSend(&m_syslink_packet);
             APP_ERROR_CHECK(err_code);
         }
 
-        if (syslinkReceive(&syslink_packet) == NRF_SUCCESS) {
-            // Todo: match and use packet (ie. fw to BLE for now...)
+        if (syslinkReceive(&m_syslink_packet) == true) {
+            NRF_LOG_INFO("Packet received!\n");
+            handle_syslink_packet(&m_syslink_packet);
         }
+    }
+}
+
+static void handle_syslink_packet(struct syslinkPacket *packet) {
+    int err_code;
+    switch (packet->type) {
+        case SYSLINK_RADIO_RAW:
+            err_code = ble_crazyflie_send_packet(&m_crazyflie, (void*) packet->data, packet->length);
+            if (err_code != NRF_SUCCESS) {
+                // Todo: this packet should be sent later and not dropped ...
+                // no more syslink packet should be received until this one is sent?
+                NRF_LOG_INFO("Error sending packet: %x\n", err_code);
+            }
+            break;
+        case SYSLINK_RADIO_CHANNEL:
+            NRF_LOG_INFO("Setting channel: %d\n", packet->data[0]);
+            syslinkSendBlocking(packet);
+            break;
+        case SYSLINK_PM_LED_ON:
+            NRF_LOG_INFO("LED ON\n");
+            nrf_gpio_pin_write(LED_1, LEDS_ACTIVE_STATE);
+            syslinkSendBlocking(packet);
+            break;
+        case SYSLINK_PM_LED_OFF:
+            NRF_LOG_INFO("LED OFF\n");
+            nrf_gpio_pin_write(LED_1, !LEDS_ACTIVE_STATE);
+            syslinkSendBlocking(packet);
+            break;
+        case SYSLINK_SYS_NRF_VERSION:
+            NRF_LOG_INFO("NRF version request\n");
+            packet->length = strlen("2024.01") + 1;
+            memcpy(packet->data, "2024.01", packet->length);
+            syslinkSendBlocking(packet);
+            break;
+        default:
+            break;
     }
 }
 

@@ -69,6 +69,13 @@ uint32_t syslinkSend(struct syslinkPacket *packet);
 bool syslink_is_tx_busy();
 
 /**
+ * Send syslink packet, blocking first until the UART to is ready.
+ *
+ * @param packet  Syslink packet containing data to send.
+ */
+uint32_t syslinkSendBlocking(struct syslinkPacket *packet);
+
+/**
  * Reset syslink state machine.
  */
 void syslinkReset();
