@@ -885,6 +885,17 @@ int main(void)
             APP_ERROR_CHECK(err_code);
         }
 
+        if (esbIsRxPacket() == true) {
+            NRF_LOG_INFO("ESB Packet received!\n");
+            EsbPacket *pk = esbGetRxPacket();
+            m_syslink_packet.length = pk->size;
+            m_syslink_packet.type = SYSLINK_RADIO_RAW;
+            memcpy(m_syslink_packet.data, pk->data, pk->size);
+            err_code = syslinkSend(&m_syslink_packet);
+            APP_ERROR_CHECK(err_code);
+            esbReleaseRxPacket();
+        }
+
         if (syslinkReceive(&m_syslink_packet) == true) {
             NRF_LOG_INFO("Packet received!\n");
             handle_syslink_packet(&m_syslink_packet);
@@ -902,11 +913,30 @@ static void handle_syslink_packet(struct syslinkPacket *packet) {
                 // no more syslink packet should be received until this one is sent?
                 NRF_LOG_INFO("Error sending packet: %x\n", err_code);
             }
+            if (esbCanTxPacket() == true) {
+                EsbPacket *pk = esbGetTxPacket();
+                pk->size = packet->length;
+                memcpy(pk->data, packet->data, packet->length);
+                esbSendTxPacket();
+            } else {
+                NRF_LOG_INFO("ESB TX busy\n");
+            }
             break;
         case SYSLINK_RADIO_CHANNEL:
             NRF_LOG_INFO("Setting channel: %d\n", packet->data[0]);
+            esbSetChannel(packet->data[0]);
             syslinkSendBlocking(packet);
             break;
+        case SYSLINK_RADIO_DATARATE:
+            NRF_LOG_INFO("Setting datarate: %d\n", packet->data[0]);
+            esbSetDatarate(packet->data[0]);
+            syslinkSendBlocking(packet);
+            break;
+        // case SYSLINK_RADIO_ADDRESS:
+        //     NRF_LOG_INFO("Setting address: %02x:%02x:%02x:%02x:%02x\n", packet->data[0], packet->data[1], packet->data[2], packet->data[3], packet->data[4]);
+        //     esbSetAddress(0x00e7e7e7e7e7);
+        //     syslinkSendBlocking(packet);
+        //     break;
         case SYSLINK_PM_LED_ON:
             NRF_LOG_INFO("LED ON\n");
             nrf_gpio_pin_write(LED_1, LEDS_ACTIVE_STATE);

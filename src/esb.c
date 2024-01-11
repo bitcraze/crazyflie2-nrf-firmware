@@ -33,16 +33,19 @@
 #include "nrf.h"
 #include "softdevice_handler.h"
 
+#define NRF_LOG_MODULE_NAME "ESB"
+#include "nrf_log.h"
+
 #define RXQ_LEN 2
 #define TXQ_LEN 2
 
 static bool isInit = true;
 
-static int channel = 80;
-static int datarate = esbDatarate2M;
-static int txpower = RADIO_TXPOWER_TXPOWER_0dBm;
-static bool contwave = false;
-static uint64_t address = 0xE7E7E7E7E7ULL;
+static int m_channel = 80;
+static int m_datarate = esbDatarate2M;
+static int m_txpower = RADIO_TXPOWER_TXPOWER_0dBm;
+static bool m_contwave = false;
+static uint64_t m_address = 0xE7E7E7E7E7ULL;
 
 static volatile enum {doTx, doRx} rs;      //Radio state
 
@@ -173,11 +176,14 @@ void esbInterruptHandler()
 {
   EsbPacket *pk;
 
+  NRF_LOG_INFO("esb interrupt\n");
+
   if (NRF_RADIO->EVENTS_END) {
 	  NRF_RADIO->EVENTS_END = 0UL;
 
     switch (rs){
     case doRx:
+      NRF_LOG_INFO("doRX\n");
       //Wrong CRC packet are dropped
       if (!NRF_RADIO->CRCSTATUS) {
         NRF_RADIO->TASKS_START = 1UL;
@@ -191,6 +197,7 @@ void esbInterruptHandler()
 
       // If no more space available on RX queue, drop packet!
       if (((rxq_head+1)%RXQ_LEN) == rxq_tail) {
+        NRF_LOG_INFO("No more space, dropping packet!\n");
         NRF_RADIO->TASKS_START = 1UL;
         return;
       }
@@ -219,6 +226,7 @@ void esbInterruptHandler()
 
       if ((pk->match == ESB_UNICAST_ADDRESS_MATCH))
       {
+        NRF_LOG_INFO("Unicast packet\n");
         // Match safeLink packet and answer it
         if (pk->size == 3 && (pk->data[0]&0xf3) == 0xf3 && pk->data[1] == 0x05) {
           has_safelink = pk->data[2];
@@ -234,6 +242,7 @@ void esbInterruptHandler()
 
         // Good packet received, yea!
         if (!has_safelink || (pk->data[0] & 0x08) != curr_up<<3) {
+          NRF_LOG_INFO("Good! packet\n");
           // Push the queue head to push this packet and prepare the next
           rxq_head = ((rxq_head+1)%RXQ_LEN);
           curr_up = 1-curr_up;
@@ -257,6 +266,7 @@ void esbInterruptHandler()
 
       break;
     case doTx:
+      NRF_LOG_INFO("doTX\n");
       //Setup RX for next packet
       setupRx();
       break;
@@ -283,6 +293,8 @@ void esbInterruptHandler()
 
 void esbInit()
 {
+  NRF_LOG_INFO(NRF_LOG_COLOR_CODE_GREEN "esb init\n" NRF_LOG_COLOR_CODE_DEFAULT);
+
   NRF_RADIO->POWER = 1;
   // Enable Radio interrupts
   if (!softdevice_handler_is_enabled()) {
@@ -293,9 +305,9 @@ void esbInit()
   }
 
 
-  NRF_RADIO->TXPOWER = (txpower << RADIO_TXPOWER_TXPOWER_Pos);
+  NRF_RADIO->TXPOWER = (m_txpower << RADIO_TXPOWER_TXPOWER_Pos);
 
-  switch (datarate) {
+  switch (m_datarate) {
   case esbDatarate250K:
       NRF_RADIO->MODE = (RADIO_MODE_MODE_Nrf_250Kbit << RADIO_MODE_MODE_Pos);
       break;
@@ -307,9 +319,9 @@ void esbInit()
       break;
   }
 
-  NRF_RADIO->FREQUENCY = channel;
+  NRF_RADIO->FREQUENCY = m_channel;
 
-  if (contwave) {
+  if (m_contwave) {
     NRF_RADIO->TEST = 3;
     NRF_RADIO->TASKS_RXEN = 1U;
     return;
@@ -321,9 +333,9 @@ void esbInit()
   //    This can be set dynamically and the current address is stored in EEPROM.
   //  * local address 1 is used for broadcasts
   //    This is currently 0xFFE7E7E7E7.
-  NRF_RADIO->PREFIX0 = 0xC4C3FF00UL | (bytewise_bitswap(address >> 32) & 0xFF);  // Prefix byte of addresses 3 to 0
+  NRF_RADIO->PREFIX0 = 0xC4C3FF00UL | (bytewise_bitswap(m_address >> 32) & 0xFF);  // Prefix byte of addresses 3 to 0
   NRF_RADIO->PREFIX1 = 0xC5C6C7C8UL;  // Prefix byte of addresses 7 to 4
-  NRF_RADIO->BASE0   = bytewise_bitswap((uint32_t)address);  // Base address for prefix 0
+  NRF_RADIO->BASE0   = bytewise_bitswap((uint32_t)m_address);  // Base address for prefix 0
   NRF_RADIO->BASE1   = 0xE7E7E7E7UL;  // Base address for prefix 1-7
   NRF_RADIO->TXADDRESS = 0x00UL;      // Set device address 0 to use when transmitting
   NRF_RADIO->RXADDRESSES = (1<<0) | (1<<1);    // Enable device address 0 and 1 to use which receiving
@@ -383,6 +395,8 @@ void esbReset()
 
 void esbDeinit()
 {
+  NRF_LOG_INFO(NRF_LOG_COLOR_CODE_RED "esb deinit\n" NRF_LOG_COLOR_CODE_DEFAULT);
+
   if (!softdevice_handler_is_enabled()) {
     NVIC_DisableIRQ(RADIO_IRQn);
   }
@@ -391,6 +405,8 @@ void esbDeinit()
   NRF_RADIO->SHORTS = 0;
   NRF_RADIO->TASKS_DISABLE = 1;
   NRF_RADIO->POWER = 0;
+
+  isInit = false;
 }
 
 bool esbIsRxPacket()
@@ -459,7 +475,7 @@ void esbSendP2PPacket(uint8_t port, char *data, uint8_t length)
 
 void esbSetDatarate(EsbDatarate dr)
 {
-  datarate = dr;
+  m_datarate = dr;
 
   esbReset();
 }
@@ -473,7 +489,7 @@ void ble_sd_stop(void);
 
 void esbSetContwave(bool enable)
 {
-  contwave = enable;
+  m_contwave = enable;
 
 #ifdef BLE
   if (softdevice_handler_is_enabled()) {
@@ -490,8 +506,8 @@ void esbSetContwave(bool enable)
 
 void esbSetChannel(unsigned int ch)
 {
-  if (channel < 126) {
-	  channel = ch;
+  if (m_channel < 126) {
+	  m_channel = ch;
 	}
 
   esbReset();
@@ -499,28 +515,28 @@ void esbSetChannel(unsigned int ch)
 
 void esbSetTxPower(int power)
 {
-  txpower = power;
+  m_txpower = power;
 
   esbReset();
 }
 
 void esbSetTxPowerDbm(int8_t powerDbm)
 {
-  if      (powerDbm <= -30) { txpower = RADIO_TXPOWER_TXPOWER_Neg30dBm; }
-  else if (powerDbm <= -20) { txpower = RADIO_TXPOWER_TXPOWER_Neg20dBm; }
-  else if (powerDbm <= -16) { txpower = RADIO_TXPOWER_TXPOWER_Neg16dBm; }
-  else if (powerDbm <= -12) { txpower = RADIO_TXPOWER_TXPOWER_Neg12dBm; }
-  else if (powerDbm <= -8)  { txpower = RADIO_TXPOWER_TXPOWER_Neg8dBm; }
-  else if (powerDbm <= -4)  { txpower = RADIO_TXPOWER_TXPOWER_Neg4dBm; }
-  else if (powerDbm <=  0)  { txpower = RADIO_TXPOWER_TXPOWER_0dBm; }
-  else if (powerDbm >=  4)  { txpower = RADIO_TXPOWER_TXPOWER_Pos4dBm; }
+  if      (powerDbm <= -30) { m_txpower = RADIO_TXPOWER_TXPOWER_Neg30dBm; }
+  else if (powerDbm <= -20) { m_txpower = RADIO_TXPOWER_TXPOWER_Neg20dBm; }
+  else if (powerDbm <= -16) { m_txpower = RADIO_TXPOWER_TXPOWER_Neg16dBm; }
+  else if (powerDbm <= -12) { m_txpower = RADIO_TXPOWER_TXPOWER_Neg12dBm; }
+  else if (powerDbm <= -8)  { m_txpower = RADIO_TXPOWER_TXPOWER_Neg8dBm; }
+  else if (powerDbm <= -4)  { m_txpower = RADIO_TXPOWER_TXPOWER_Neg4dBm; }
+  else if (powerDbm <=  0)  { m_txpower = RADIO_TXPOWER_TXPOWER_0dBm; }
+  else if (powerDbm >=  4)  { m_txpower = RADIO_TXPOWER_TXPOWER_Pos4dBm; }
 
   esbReset();
 }
 
 void esbSetAddress(uint64_t addr)
 {
-  address = addr;
+  m_address = addr;
 
   esbReset();
 }
