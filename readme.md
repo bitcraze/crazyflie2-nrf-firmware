@@ -2,8 +2,6 @@
 
 Firmware for the nRF51822 contained in the Crazyflie 2.1.
 
-Currently only supports the nRF51DK dev board.
-
 ## Compile
 
 Just after clonning the repository:
@@ -11,7 +9,14 @@ Just after clonning the repository:
 ./tools/fetch_dependencies.sh
 ```
 
-Then to complile and flash the nrf51dk:
+Flashing currently requires `nrfjprog`, can be found on [Nordic's website](https://www.nordicsemi.com/Products/Development-tools/nrf-command-line-tools/download).
+
+Flash the softdevice:
+```bash
+make flash_softdevice
+```
+
+Then to complile and flash the crazyflie:
 ``` bash
 make
 make flash

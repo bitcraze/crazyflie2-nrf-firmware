@@ -218,6 +218,7 @@ uint8_t syslinkGetRxCheckSum2ErrorCnt() {
 }
 
 static void uart_evt_handler(nrf_drv_uart_event_t * p_event, void * p_context) {
+  int mask;
   switch (p_event->type) {
     case NRF_DRV_UART_EVT_RX_DONE:
       uart_on_receive(p_event->data.rxtx.p_data, p_event->data.rxtx.bytes);
@@ -226,7 +227,7 @@ static void uart_evt_handler(nrf_drv_uart_event_t * p_event, void * p_context) {
       break;
     case NRF_DRV_UART_EVT_ERROR:
       // Relaunch the pump ...
-      int mask = p_event->data.error.error_mask;
+      mask = p_event->data.error.error_mask;
       NRF_LOG_ERROR("UART error: 0x%02X\n", mask);
       break;
     default:
