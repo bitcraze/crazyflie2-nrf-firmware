@@ -300,7 +300,7 @@ flash: $(OUTPUT_DIRECTORY)/$(PROGRAM).hex
                  -c "flash write_image erase $(OUTPUT_DIRECTORY)/$(PROGRAM).hex" -c "verify_image $(OUTPUT_DIRECTORY)/$(PROGRAM).hex" \
                  -c "reset run" -c shutdown
 
-flash_s130: $(NRF_S110)/s130_nrf51_2.0.1_softdevice.hex
+flash_s130: $(SDK_ROOT)/components/softdevice/s130/hex/s130_nrf51_2.0.1_softdevice.hex
 	$(OPENOCD) -d2 -f $(OPENOCD_INTERFACE) $(OPENOCD_CMDS) -f $(OPENOCD_TARGET) -c init -c targets -c "reset halt" \
                  -c "nrf51 mass_erase" \
                  -c "flash write_image erase $(SDK_ROOT)/components/softdevice/s130/hex/s130_nrf51_2.0.1_softdevice.hex" \
