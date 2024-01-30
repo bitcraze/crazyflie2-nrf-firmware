@@ -166,7 +166,9 @@ static void pmNrfPower(bool enable)
     NRF_POWER->GPREGRET |= 0x01; // Workaround for not being able to determine reset reason...
 
     if (bleEnabled) {
+#ifdef BLE
       sd_power_system_off();
+#endif
     } else {
       NRF_POWER->SYSTEMOFF = 1UL;
     }

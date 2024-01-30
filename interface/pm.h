@@ -24,6 +24,7 @@
 #ifndef __PM_H__
 #define __PM_H__
 #include <stdbool.h>
+#include <stdint.h>
 
 typedef enum {pmAllOff=0, pmSysOff=1, pmSysPowered=2, pmSysBootSetup=3, pmSysRunning=4} PmState;
 

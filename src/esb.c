@@ -472,14 +472,18 @@ void esbSetDatarate(EsbDatarate dr)
   esbReset();
 }
 
+
+#ifdef BLE
 void ble_advertising_stop(void);
 void advertising_start(void);
 void ble_sd_stop(void);
+#endif
 
 void esbSetContwave(bool enable)
 {
   contwave = enable;
 
+#ifdef BLE
   if (bleEnabled) {
     if (enable) {
 //      ble_advertising_stop();
@@ -487,6 +491,7 @@ void esbSetContwave(bool enable)
 //      advertising_start();
     }
   }
+#endif
 
   esbReset();
 }

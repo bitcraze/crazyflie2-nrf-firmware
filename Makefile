@@ -1,8 +1,10 @@
 #Put your personal build config in config.mk and DO NOT COMMIT IT!
 -include config.mk
 
-BLE      ?= 1    # BLE mode activated or not. If disabled, CRTP mode is active
 PLATFORM ?= cf2
+-include platform/platform_$(PLATFORM).mk
+
+BLE      ?= 1    # BLE mode activated or not. If disabled, CRTP mode is active
 
 PROGRAM = $(PLATFORM)_nrf
 PROJECT_NAME     := crazyflie2_nrf_firmware
@@ -221,10 +223,6 @@ CFLAGS += -Wno-error=array-bounds
 
 # Enable app config
 CFLAGS += -DUSE_APP_CONFIG
-
-ifeq ($(strip $(BLE)), 1)
-CFLAGS += -DBLE=1
-endif
 
 # C++ flags common to all targets
 CXXFLAGS += \

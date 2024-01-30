@@ -117,7 +117,9 @@ int main()
   msDelay(1000);
 
   if (bleEnabled) {
+#ifdef BLE
     ble_init();
+#endif
   } else {
     NRF_CLOCK->TASKS_HFCLKSTART = 1UL;
     while(!NRF_CLOCK->EVENTS_HFCLKSTARTED);
@@ -182,12 +184,13 @@ void mainloop()
 
   while(1)
   {
-
+#ifdef BLE
     if (bleEnabled) {
       if ((esbReceived == false) && ble_receive_packet(&esbRxPacket)) {
         esbReceived = true;
       }
     }
+#endif
 
 #ifndef CONT_WAVE_TEST
 
@@ -290,6 +293,7 @@ static void handleSyslinkEvents(bool slReceived)
           bzero(slRxPacket.data, SYSLINK_MTU);
         }
 
+#ifdef BLE
         if (bleEnabled) {
           if (slRxPacket.length < SYSLINK_MTU) {
             static EsbPacket pk;
@@ -298,6 +302,7 @@ static void handleSyslinkEvents(bool slReceived)
             ble_send_packet(&pk);
           }
         }
+#endif
 
         break;
       case SYSLINK_RADIO_CHANNEL:
@@ -563,9 +568,11 @@ static void handleBootloaderCmd(struct esbPacket_s *packet)
       memcpy(&(txpk.data[3]), (uint32_t*)NRF_FICR->DEVICEADDR, 6);
 
       txpk.size = 9;
+#ifdef BLE
       if (bleEnabled) {
         ble_send_packet(&txpk);
       }
+#endif
 
       if (esbCanTxPacket()) {
         struct esbPacket_s *pk = esbGetTxPacket();
@@ -584,7 +591,9 @@ static void handleBootloaderCmd(struct esbPacket_s *packet)
           NRF_POWER->GPREGRET |= 0x20U;
         }
         if (bleEnabled) {
+#ifdef BLE
           sd_nvic_SystemReset();
+#endif
         } else {
           NVIC_SystemReset();
         }
@@ -630,9 +639,12 @@ static void handleBootloaderCmd(struct esbPacket_s *packet)
 }
 
 static void disableBle() {
+#ifdef BLE
   if (bleEnabled) {
-      sd_softdevice_disable();
-      bleEnabled = 0;
-      esbInit();
+    sd_softdevice_disable();
+    bleEnabled = 0;
+    esbInit();
   }
+#endif
+  bleEnabled = 0;
 }
