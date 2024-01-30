@@ -6,7 +6,7 @@
  *  ||  ||    /_____/_/\__/\___/_/   \__,_/ /___/\___/
  *
  * Crazyflie 2.0 NRF Firmware
- * Copyright (c) 2014, Bitcraze AB, All rights reserved.
+ * Copyright (c) 2024, Bitcraze AB, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -23,10 +23,7 @@
  *
  * Nordic BLE stack timeslot management code
  */
-#ifndef __TIMESLOT_H__
-#define __TIMESLOT_H__
+#pragma once
 
 void timeslot_sd_evt_signal(uint32_t sys_evt);
-void timeslot_start(void);
-
-#endif //__TIMESLOT_H__
+uint32_t timeslot_start(void);

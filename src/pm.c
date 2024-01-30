@@ -6,7 +6,7 @@
  *  ||  ||    /_____/_/\__/\___/_/   \__,_/ /___/\___/
  *
  * Crazyflie 2.0 NRF Firmware
- * Copyright (c) 2014, Bitcraze AB, All rights reserved.
+ * Copyright (c) 2024, Bitcraze AB, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -26,6 +26,7 @@
 #include <nrf.h>
 #include <nrf_gpio.h>
 #include <nrf_soc.h>
+#include <nrf_gpiote.h>
 
 #include "pm.h"
 #include "button.h"
@@ -180,9 +181,48 @@ static void pmDummy(bool enable) {
   ;
 }
 
+#if 0
+#ifndef BLE
+#define OUTPUT_PIN_NUMBER   23
+static void enable8MHzHLCKtoSTM(void)
+{
+  // Configure OUTPUT_PIN_NUMBER as an output.
+  nrf_gpio_cfg_output(OUTPUT_PIN_NUMBER);
+
+  // Configure GPIOTE channel 0 to toggle the pin state
+  nrf_gpiote_task_config(0, OUTPUT_PIN_NUMBER,
+                         NRF_GPIOTE_POLARITY_TOGGLE,
+                         NRF_GPIOTE_INITIAL_VALUE_LOW);
+
+  // Configure PPI channel 2 to toggle OUTPUT_PIN on every TIMER1 COMPARE[0] match.
+  NRF_PPI->CH[2].EEP = (uint32_t)&NRF_TIMER1->EVENTS_COMPARE[0];
+  NRF_PPI->CH[2].TEP = (uint32_t)&NRF_GPIOTE->TASKS_OUT[0];
+
+  // Enable PPI channel 2
+  NRF_PPI->CHEN = (PPI_CHEN_CH2_Enabled << PPI_CHEN_CH2_Pos);
+
+  // Configure timer 2
+  NRF_TIMER1->TASKS_STOP = 1;
+  NRF_TIMER1->TASKS_CLEAR = 1;
+  NRF_TIMER1->MODE      = TIMER_MODE_MODE_Timer;
+  NRF_TIMER1->BITMODE   = TIMER_BITMODE_BITMODE_16Bit << TIMER_BITMODE_BITMODE_Pos;
+  NRF_TIMER1->PRESCALER = 0;
+  NRF_TIMER1->SHORTS = TIMER_SHORTS_COMPARE0_CLEAR_Msk;
+  NRF_TIMER1->INTENSET = 0;
+  NVIC_DisableIRQ(TIMER1_IRQn);
+  // Load the initial values to TIMER1 CC registers to get 8Mhz.
+  NRF_TIMER1->CC[0] = 1;
+  NRF_TIMER1->TASKS_START = 1;
+}
+#endif
+#endif
+
 static void pmPowerSystem(bool enable)
 {
   if (enable) {
+#ifndef BLE
+//    enable8MHzHLCKtoSTM();
+#endif
     NRF_GPIO->PIN_CNF[STM_NRST_PIN] = (GPIO_PIN_CNF_SENSE_Disabled << GPIO_PIN_CNF_SENSE_Pos)
                                       | (GPIO_PIN_CNF_DRIVE_S0D1 << GPIO_PIN_CNF_DRIVE_Pos)
                                       | (GPIO_PIN_CNF_PULL_Disabled << GPIO_PIN_CNF_PULL_Pos)

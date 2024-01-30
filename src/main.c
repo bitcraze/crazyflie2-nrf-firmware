@@ -6,7 +6,7 @@
  *  ||  ||    /_____/_/\__/\___/_/   \__,_/ /___/\___/
  *
  * Crazyflie 2.0 NRF Firmware
- * Copyright (c) 2014, Bitcraze AB, All rights reserved.
+ * Copyright (c) 2024, Bitcraze AB, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -41,16 +41,18 @@
 #include "systick.h"
 #include "nrf_sdm.h"
 #include "nrf_soc.h"
+#include "nrf_nvic.h"
 #include "version.h"
 #include "shutdown.h"
+#include "platform.h"
 
 #include "memory.h"
 #include "ownet.h"
 
+#include "ble_int.h"
 #include "ble_crazyflies.h"
 
 extern void  initialise_monitor_handles(void);
-extern int ble_init(void);
 
 #ifndef SEMIHOSTING
 #define printf(...)
@@ -70,9 +72,9 @@ static void mainloop(void);
 #endif
 
 #ifdef BLE
-int bleEnabled = 1;
+int volatile bleEnabled = 1;
 #else
-int bleEnabled = 0;
+int volatile bleEnabled = 0;
 #endif
 
 static struct syslinkPacket slRxPacket;
@@ -182,12 +184,8 @@ void mainloop()
   {
 
     if (bleEnabled) {
-      if ((esbReceived == false) && bleCrazyfliesIsPacketReceived()) {
-        EsbPacket* packet = bleCrazyfliesGetRxPacket();
-        memcpy(esbRxPacket.data, packet->data, packet->size);
-        esbRxPacket.size = packet->size;
+      if ((esbReceived == false) && ble_receive_packet(&esbRxPacket)) {
         esbReceived = true;
-        bleCrazyfliesReleaseRxPacket(packet);
       }
     }
 
@@ -297,7 +295,7 @@ static void handleSyslinkEvents(bool slReceived)
             static EsbPacket pk;
             memcpy(pk.data,  slRxPacket.data, slRxPacket.length);
             pk.size = slRxPacket.length;
-            bleCrazyfliesSendPacket(&pk);
+            ble_send_packet(&pk);
           }
         }
 
@@ -393,9 +391,15 @@ static void handleSyslinkEvents(bool slReceived)
           slTxPacket.data[len] = '*';
           len += 1;
         }
+        // Add platform identifier
+        slTxPacket.data[len++] = ' ';
+        slTxPacket.data[len++] = '(';
+        memcpy(&slTxPacket.data[len], (void*)PLATFORM_DEVICE_DATA_FLASH_POS + 2, 4);
+        len += 4;
+        slTxPacket.data[len++] = ')';
+        slTxPacket.data[len++] = '\0';
 
-        slTxPacket.data[len] = '\0';
-        slTxPacket.length = len + 1;
+        slTxPacket.length = len;
         syslinkSend(&slTxPacket);
       } break;
       case SYSLINK_PM_BATTERY_AUTOUPDATE:
@@ -560,7 +564,7 @@ static void handleBootloaderCmd(struct esbPacket_s *packet)
 
       txpk.size = 9;
       if (bleEnabled) {
-        bleCrazyfliesSendPacket(&txpk);
+        ble_send_packet(&txpk);
       }
 
       if (esbCanTxPacket()) {
