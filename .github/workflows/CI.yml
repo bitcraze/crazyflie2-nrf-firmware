@@ -1,0 +1,40 @@
+# Build the project using the Bitcraze builder docker image
+name: CI
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  schedule:
+    # Weekly build to make sure dependencies are OK
+    - cron:  '30 15 * * 0'
+
+jobs:
+  read_targets_from_file:
+    uses: bitcraze/workflows/.github/workflows/read_build_targets.yml@dfbc8c23a8ec6d4925d01deb20277839ad1235f1
+    with:
+      target_file: './build_targets.json'
+
+  build:
+    needs: read_targets_from_file
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        ${{fromJson(needs.read_targets_from_file.outputs.platforms)}}
+
+    env:
+      PLATFORM: ${{ matrix.platform }}
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Check and build
+      run: docker run --rm -v ${PWD}:/module bitcraze/builder ./tools/build/build PLATFORM=$PLATFORM
+
+    - name: Upload Build Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ matrix.platform }}-${{ github.sha }}
+        path: ${{ matrix.platform }}_nrf.bin
