@@ -1,5 +1,19 @@
-vendor/
-*.o
 *.d
+*~
+*.o
+*.bin
+*.elf
+config.mk
+*.patch
+.cproject
+.project
+.settings
 _build/
 .vscode/
+
+#Nordic libs etc.
+vendor/
+
+# jykell files
+docs/.jekyll-metadata
+docs/.jekyll-cache

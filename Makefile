@@ -224,6 +224,10 @@ CFLAGS += -Wno-error=array-bounds
 # Enable app config
 CFLAGS += -DUSE_APP_CONFIG
 
+ifeq ($(strip $(BLE)), 1)
+CFLAGS += -DBLE=1
+endif
+
 # C++ flags common to all targets
 CXXFLAGS += \
 
