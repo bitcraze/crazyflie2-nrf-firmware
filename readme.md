@@ -1,23 +1,31 @@
-# Crazyflie 2.1 nRF firmware2
+# Crazyflie 2.X NRF51 firmware [![CI](https://github.com/bitcraze/crazyflie2-nrf-firmware/workflows/CI/badge.svg)](https://github.com/bitcraze/crazyflie2-nrf-firmware/actions?query=workflow%3ACI)
 
-Firmware for the nRF51822 contained in the Crazyflie 2.1.
+Source code of the firmware running in the Crazyflie 2.X nRF51822.
+This microcontroller has a couple of roles:
+ - Power management (ON/OFF logic and battery handling)
+ - Radio communication
+   - Enhanced Shockburst compatible with Crazyradio (PA)
+   - Bluetooth low energy using the Nordic Semiconductor S130 stack
+ - One-wire memory access
 
-## Compile
+## Building and Flashing
 
-Just after clonning the repository:
-``` bash
-./tools/fetch_dependencies.sh
-```
+See the [building and flashing instructions](docs/build/build.md) in the github docs folder.
 
-Flashing currently requires `nrfjprog`, can be found on [Nordic's website](https://www.nordicsemi.com/Products/Development-tools/nrf-command-line-tools/download).
+## Official Documentation
 
-Flash the softdevice:
-```bash
-make flash_softdevice
-```
+Check out the [Bitcraze crazyflie2-nrf-firmware documentation](https://www.bitcraze.io/documentation/repository/crazyflie2-nrf-firmware/master/) on our website.
 
-Then to complile and flash the crazyflie:
-``` bash
-make
-make flash
-```
+## Contribute
+Go to the [contribute page](https://www.bitcraze.io/contribute/) on our website to learn more.
+
+### Test code for contribution
+Run the automated build locally to test your code
+
+	./tools/build/build
+
+## License
+
+Most of the code is licensed under LGPL-3.0.
+
+Some files under src/ble/ are modified from Nordic semiconductor examples.
