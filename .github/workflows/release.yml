@@ -74,6 +74,6 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.get_release_info.outputs.upload_url }}
-        asset_path: ${{ matrix.platform }}_nrf.bin
+        asset_path: _build/${{ matrix.platform }}_nrf.bin
         asset_name: ${{ matrix.platform }}_nrf-${{ steps.get_release_version.outputs.release_version }}.bin
         asset_content_type: application/octet-stream
