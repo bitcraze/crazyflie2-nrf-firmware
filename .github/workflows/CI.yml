@@ -37,4 +37,4 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: ${{ matrix.platform }}-${{ github.sha }}
-        path: ${{ matrix.platform }}_nrf.bin
+        path: _build/${{ matrix.platform }}_nrf.bin
