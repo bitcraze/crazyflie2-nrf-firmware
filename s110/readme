@@ -1,5 +1,0 @@
-To compile with Bluetooth support extract s110_nrf51822_7.0.0.zip here or run
-tools/build/download_deps.sh
-
-http://www.nordicsemi.com/eng/nordic/download_resource/48420/8/62400196
-

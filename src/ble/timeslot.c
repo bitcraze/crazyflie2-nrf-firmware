@@ -6,7 +6,7 @@
  *  ||  ||    /_____/_/\__/\___/_/   \__,_/ /___/\___/
  *
  * Crazyflie 2.0 NRF Firmware
- * Copyright (c) 2014, Bitcraze AB, All rights reserved.
+ * Copyright (c) 2024, Bitcraze AB, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -27,16 +27,20 @@
 #include <stdint.h>
 #include "timeslot.h"
 
-#include <nrf.h>
-#include <nrf_soc.h>
+#include "sdk_common.h"
+#include "nrf.h"
+#include "nrf_soc.h"
 
 #include "esb.h"
+
+#define NRF_LOG_MODULE_NAME "APP"
+#include "nrf_log.h"
 
 #define TIMESLOT_LEN_US 1000
 
 static nrf_radio_request_t timeslot_request = {
   .request_type = NRF_RADIO_REQ_TYPE_EARLIEST,
-  .params.earliest.hfclk = NRF_RADIO_HFCLK_CFG_DEFAULT,
+  .params.earliest.hfclk = NRF_RADIO_HFCLK_CFG_XTAL_GUARANTEED,
   .params.earliest.priority = NRF_RADIO_PRIORITY_NORMAL,
   .params.earliest.length_us = TIMESLOT_LEN_US,
   .params.earliest.timeout_us = 1000000,
@@ -108,14 +112,21 @@ void timeslot_sd_evt_signal(uint32_t sys_evt)
     case NRF_EVT_RADIO_BLOCKED:
     case NRF_EVT_RADIO_CANCELED:
       sd_radio_request(&timeslot_request);
+      NRF_LOG_WARNING("Radio timeslot request blocked or canceled, asking again\n");
       break;
     default:
       break;
   }
 }
 
-void timeslot_start(void)
+uint32_t timeslot_start(void)
 {
-  sd_radio_session_open(timeslot_callback);
-  sd_radio_request(&timeslot_request);
+  uint32_t err_code;
+  err_code = sd_radio_session_open(timeslot_callback);
+  VERIFY_SUCCESS(err_code);
+
+  err_code = sd_radio_request(&timeslot_request);
+  VERIFY_SUCCESS(err_code);
+
+  return err_code;
 }

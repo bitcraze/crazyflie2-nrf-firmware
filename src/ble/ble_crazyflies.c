@@ -1,317 +1,327 @@
-/**
- *    ||          ____  _ __
- * +------+      / __ )(_) /_______________ _____  ___
- * | 0xBC |     / __  / / __/ ___/ ___/ __ `/_  / / _ \
- * +------+    / /_/ / / /_/ /__/ /  / /_/ / / /_/  __/
- *  ||  ||    /_____/_/\__/\___/_/   \__,_/ /___/\___/
- *
- * Crazyflie 2.0 NRF Firmware
- * Copyright (c) 2014, Bitcraze AB, All rights reserved.
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 3.0 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library.
- *
- * Bluetooth LE Crazyflie service
- *
- * Bitcraze UUID base: 00000000-1c7f-4f9e-947b-43b7c00a9a08
- */
-#include <stdlib.h>
-#include <stdbool.h>
-#include <string.h>
-#include <ble.h>
-
-#include "bitcraze_uuids.h"
-
-#include "esb.h"
+#include "sdk_common.h"
 #include "ble_crazyflies.h"
 
+#define NRF_LOG_MODULE_NAME "CRAZYFLIE_SRV"
+#include "nrf_log.h"
 
-static ble_gatts_char_handles_t crtp_handle;
-static ble_gatts_char_handles_t crtpup_handle;
-static ble_gatts_char_handles_t crtpdown_handle;
-static uint16_t mConnHandle = 0xffffu;
-
-static ble_gatts_char_md_t crtp_md = {
-  .char_props = { .read = 1, .write = 1, .notify = 1 },
-  //.char_ext_props = {},
-  //.p_char_user_desc = (uint8_t *) "Led 1",
-  //.char_user_desc_max_size = 32,
-  //.char_user_desc_size = 5,
-
-  .p_char_pf = NULL,
-  .p_sccd_md = NULL,
-};
-
-static ble_gatts_char_md_t crtpup_md = {
-  .char_props = { .write = 1, .write_wo_resp = 1 },
-
-  .p_char_pf = NULL,
-  .p_sccd_md = NULL,
-};
-
-static ble_gatts_char_md_t crtpdown_md = {
-  .char_props = { .read = 1, .notify = 1 },
-
-  .p_char_pf = NULL,
-  .p_sccd_md = NULL,
-};
-
-static ble_gatts_attr_md_t crtp_attr_md = {
-  .read_perm = {.sm = 1, .lv = 1},
-  .write_perm = {.sm = 1, .lv = 1},
-  .vloc = BLE_GATTS_VLOC_STACK,
-  .vlen = 1,
-};
-
-static ble_gatts_attr_t crtp_attr = {
-  .p_attr_md = &crtp_attr_md,
-  .init_len = 1,
-  .init_offs = 0,
-  .max_len = 32,
-};
-
-static ble_gatts_attr_md_t crtpupdown_attr_md = {
-  .read_perm = {.sm = 1, .lv = 1},
-  .write_perm = {.sm = 1, .lv = 1},
-  .vloc = BLE_GATTS_VLOC_STACK,
-  .vlen = 1,
-};
-
-static ble_gatts_attr_t crtpupdown_attr = {
-  .p_attr_md = &crtpupdown_attr_md,
-  .init_len = 1,
-  .init_offs = 0,
-  .max_len = 32,
-};
+#define CRAZYFLIE_BASE_UUID {{0x08, 0x9A, 0x0A, 0xC0, 0xB7, 0x43, 0x7B, 0x94, 0x9E, 0x4F, 0x7F, 0x1C, 0x00, 0x00, 0x00, 0x00}}
 
 
+static void on_write(ble_crazyflie_t* p_crazyflie, ble_evt_t const* p_ble_evt) {
+    ble_gatts_evt_write_t * p_evt_write = (void*) &p_ble_evt->evt.gatts_evt.params.write;
 
-static bool crtpPacketReceived = false;
-static EsbPacket rxPacket;
-
-#define ERROR_CHECK(E) if (E != NRF_SUCCESS) { return err; }
-
-void ble_crazyflies_on_ble_evt(ble_evt_t * p_ble_evt)
-{
-  ble_gatts_evt_write_t *p_write;
-
-  switch(p_ble_evt->header.evt_id) {
-    case BLE_GAP_EVT_CONNECTED:
-      mConnHandle = p_ble_evt->evt.gap_evt.conn_handle;
-      break;
-    case BLE_GAP_EVT_DISCONNECTED:
-      mConnHandle = 0xffffu;
-      break;
-    case BLE_GATTS_EVT_WRITE:
-      p_write = &p_ble_evt->evt.gatts_evt.params.write;
-      if (p_write->handle == crtp_handle.value_handle) {
-        if (!crtpPacketReceived) {
-          memcpy(rxPacket.data, p_write->data, p_write->len);
-          rxPacket.size = p_write->len;
-          crtpPacketReceived = true;
+    if (p_evt_write->handle == p_crazyflie->crtp_char_handles.value_handle) {
+        p_crazyflie->data_handler(p_crazyflie, p_evt_write->data, p_evt_write->len);
+    } else if (p_evt_write->handle == p_crazyflie->crtpup_char_handles.value_handle) {
+        if (p_evt_write->len > 0 && ((p_evt_write->data[0] & 0x80) == 0x80)) {
+            p_crazyflie->packet_length = p_evt_write->data[0] & 0x1F;
+            p_crazyflie->packet_index = p_evt_write->len - 1;
+            memcpy(p_crazyflie->packet_buffer, p_evt_write->data+1, p_evt_write->len-1);
+        } else {
+            memcpy(p_crazyflie->packet_buffer+p_crazyflie->packet_index, p_evt_write->data+1, p_evt_write->len-1);
+            p_crazyflie->data_handler(p_crazyflie, p_crazyflie->packet_buffer, p_crazyflie->packet_length);
         }
-      }
-      if (p_write->handle == crtpup_handle.value_handle) {
-        static unsigned char pkdata[32];
-        static int length;
-        static unsigned char pid = 0xff;
-        bool received = false;
+    } else if (p_evt_write->handle == p_crazyflie->crtpdown_char_handles.cccd_handle) {
+        if (p_evt_write->len == 2) {
+            if (ble_srv_is_notification_enabled(p_evt_write->data)) {
+                p_crazyflie->crtpdown_notification_enabled = true;
+            } else {
+                p_crazyflie->crtpdown_notification_enabled = false;
+            }
+        }
+    }
+}
 
-        if ((p_write->data[0] & 0x80) == 0x80) {
-          pid = p_write->data[0] & 0x60;
-          length = (p_write->data[0]&0x1f) + 1;
+static void on_connect(ble_crazyflie_t* p_crazyflie, ble_evt_t const* p_ble_evt) {
+    p_crazyflie->conn_handle = p_ble_evt->evt.gap_evt.conn_handle;
+    sd_ble_tx_packet_count_get(p_crazyflie->conn_handle, &p_crazyflie->tx_pk_free);
+}
 
-          if (length>19) {
-            memcpy(pkdata, p_write->data+1, 19);
-            received = false;
-          } else {
-            memcpy(pkdata, p_write->data+1, length);
-            received = true;
-          }
-        } else if ((p_write->data[0]&0x60) == pid) {
-          pid = 0xff;
-          memcpy(pkdata+19, p_write->data+1, length-19);
-          received = true;
+static void on_disconnect(ble_crazyflie_t* p_crazyflie, ble_evt_t const* p_ble_evt) {
+    UNUSED_PARAMETER(p_ble_evt);
+    p_crazyflie->conn_handle = BLE_CONN_HANDLE_INVALID;
+}
+
+static uint32_t crtp_char_add(ble_crazyflie_t* p_crazyflie, const ble_crazyflie_init_t* p_crazyflie_init) {
+    ble_gatts_char_md_t char_md;
+    ble_gatts_attr_md_t cccd_md;
+    ble_gatts_attr_t attr_char_value;
+    ble_uuid_t ble_uuid;
+    ble_gatts_attr_md_t attr_md;
+
+    memset(&cccd_md, 0, sizeof(cccd_md));
+
+    BLE_GAP_CONN_SEC_MODE_SET_OPEN(&cccd_md.read_perm);
+    BLE_GAP_CONN_SEC_MODE_SET_OPEN(&cccd_md.write_perm);
+
+    cccd_md.vloc = BLE_GATTS_VLOC_STACK;
+
+    memset(&char_md, 0, sizeof(char_md));
+
+    char_md.char_props.read = 1;
+    char_md.char_props.notify = 1;
+    char_md.char_props.write = 1;
+    char_md.char_props.write_wo_resp = 1;
+    char_md.p_char_user_desc = NULL;
+    char_md.p_char_pf = NULL;
+    char_md.p_user_desc_md = NULL;
+    char_md.p_cccd_md = &cccd_md;
+    char_md.p_sccd_md = NULL;
+
+    ble_uuid.type = p_crazyflie->uuid_type;
+    ble_uuid.uuid = 0x0202;
+
+    memset(&attr_md, 0, sizeof(attr_md));
+
+    BLE_GAP_CONN_SEC_MODE_SET_OPEN(&attr_md.read_perm);
+    BLE_GAP_CONN_SEC_MODE_SET_OPEN(&attr_md.write_perm);
+    attr_md.vloc = BLE_GATTS_VLOC_STACK;
+    attr_md.rd_auth = 0;
+    attr_md.wr_auth = 0;
+    attr_md.vlen = 1;
+
+    memset(&attr_char_value, 0, sizeof(attr_char_value));
+
+    attr_char_value.p_uuid = &ble_uuid;
+    attr_char_value.p_attr_md = &attr_md;
+    attr_char_value.init_len = 0;
+    attr_char_value.init_offs = 0;
+    attr_char_value.max_len = 20;
+
+    return sd_ble_gatts_characteristic_add(p_crazyflie->service_handle,
+                                           &char_md,
+                                           &attr_char_value,
+                                           &p_crazyflie->crtp_char_handles);
+
+}
+
+static uint32_t crtpup_char_add(ble_crazyflie_t* p_crazyflie, const ble_crazyflie_init_t* p_crazyflie_init) {
+    ble_gatts_char_md_t char_md;
+    ble_gatts_attr_md_t cccd_md;
+    ble_gatts_attr_t attr_char_value;
+    ble_uuid_t ble_uuid;
+    ble_gatts_attr_md_t attr_md;
+
+    memset(&cccd_md, 0, sizeof(cccd_md));
+
+    BLE_GAP_CONN_SEC_MODE_SET_OPEN(&cccd_md.read_perm);
+    BLE_GAP_CONN_SEC_MODE_SET_OPEN(&cccd_md.write_perm);
+
+    cccd_md.vloc = BLE_GATTS_VLOC_STACK;
+
+    memset(&char_md, 0, sizeof(char_md));
+
+    char_md.char_props.write = 1;
+    char_md.char_props.write_wo_resp = 1;
+    char_md.p_char_user_desc = NULL;
+    char_md.p_char_pf = NULL;
+    char_md.p_user_desc_md = NULL;
+    char_md.p_cccd_md = &cccd_md;
+    char_md.p_sccd_md = NULL;
+
+    ble_uuid.type = p_crazyflie->uuid_type;
+    ble_uuid.uuid = 0x0203;
+
+    memset(&attr_md, 0, sizeof(attr_md));
+
+    BLE_GAP_CONN_SEC_MODE_SET_OPEN(&attr_md.read_perm);
+    BLE_GAP_CONN_SEC_MODE_SET_OPEN(&attr_md.write_perm);
+    attr_md.vloc = BLE_GATTS_VLOC_STACK;
+    attr_md.rd_auth = 0;
+    attr_md.wr_auth = 0;
+    attr_md.vlen = 1;
+
+    memset(&attr_char_value, 0, sizeof(attr_char_value));
+
+    attr_char_value.p_uuid = &ble_uuid;
+    attr_char_value.p_attr_md = &attr_md;
+    attr_char_value.init_len = 0;
+    attr_char_value.init_offs = 0;
+    attr_char_value.max_len = 20;
+
+    return sd_ble_gatts_characteristic_add(p_crazyflie->service_handle,
+                                           &char_md,
+                                           &attr_char_value,
+                                           &p_crazyflie->crtpup_char_handles);
+
+}
+
+uint32_t crtpdown_char_add(ble_crazyflie_t* p_crazyflie, const ble_crazyflie_init_t* p_crazyflie_init) {
+    ble_gatts_char_md_t char_md;
+    ble_gatts_attr_md_t cccd_md;
+    ble_gatts_attr_t attr_char_value;
+    ble_uuid_t ble_uuid;
+    ble_gatts_attr_md_t attr_md;
+
+    memset(&cccd_md, 0, sizeof(cccd_md));
+
+    BLE_GAP_CONN_SEC_MODE_SET_OPEN(&cccd_md.read_perm);
+    BLE_GAP_CONN_SEC_MODE_SET_OPEN(&cccd_md.write_perm);
+
+    cccd_md.vloc = BLE_GATTS_VLOC_STACK;
+
+    memset(&char_md, 0, sizeof(char_md));
+
+    char_md.char_props.notify = 1;
+    char_md.char_props.read = 1;
+    char_md.p_char_user_desc = NULL;
+    char_md.p_char_pf = NULL;
+    char_md.p_user_desc_md = NULL;
+    char_md.p_cccd_md = &cccd_md;
+    char_md.p_sccd_md = NULL;
+
+    ble_uuid.type = p_crazyflie->uuid_type;
+    ble_uuid.uuid = 0x0204;
+
+    memset(&attr_md, 0, sizeof(attr_md));
+
+    BLE_GAP_CONN_SEC_MODE_SET_OPEN(&attr_md.read_perm);
+    BLE_GAP_CONN_SEC_MODE_SET_OPEN(&attr_md.write_perm);
+    attr_md.vloc = BLE_GATTS_VLOC_STACK;
+    attr_md.rd_auth = 0;
+    attr_md.wr_auth = 0;
+    attr_md.vlen = 1;
+
+    memset(&attr_char_value, 0, sizeof(attr_char_value));
+
+    attr_char_value.p_uuid = &ble_uuid;
+    attr_char_value.p_attr_md = &attr_md;
+    attr_char_value.init_len = 0;
+    attr_char_value.init_offs = 0;
+    attr_char_value.max_len = 20;
+
+    return sd_ble_gatts_characteristic_add(p_crazyflie->service_handle,
+                                           &char_md,
+                                           &attr_char_value,
+                                           &p_crazyflie->crtpdown_char_handles);
+}
+
+uint32_t ble_crazyflie_init(ble_crazyflie_t *p_crazyflie, const ble_crazyflie_init_t *p_crazyflie_init) {
+    uint32_t err_code;
+    ble_uuid_t ble_uuid;
+    ble_uuid128_t crazyflie_base_uuid = CRAZYFLIE_BASE_UUID;
+
+    VERIFY_PARAM_NOT_NULL(p_crazyflie);
+    VERIFY_PARAM_NOT_NULL(p_crazyflie_init);
+    VERIFY_PARAM_NOT_NULL(p_crazyflie_init->data_handler);
+
+    // Add Crazyflie serive UUID
+    err_code = sd_ble_uuid_vs_add(&crazyflie_base_uuid, &p_crazyflie->uuid_type);
+    VERIFY_SUCCESS(err_code);
+
+    ble_uuid.type = p_crazyflie->uuid_type;
+    ble_uuid.uuid = 0x0201;
+
+    // Add Crazyflie service
+    err_code = sd_ble_gatts_service_add(BLE_GATTS_SRVC_TYPE_PRIMARY, 
+                                        &ble_uuid,
+                                        &p_crazyflie->service_handle);
+    VERIFY_SUCCESS(err_code);
+
+    err_code = crtp_char_add(p_crazyflie, p_crazyflie_init);
+    VERIFY_SUCCESS(err_code);
+
+    err_code = crtpup_char_add(p_crazyflie, p_crazyflie_init);
+    VERIFY_SUCCESS(err_code);
+
+    err_code = crtpdown_char_add(p_crazyflie, p_crazyflie_init);
+    VERIFY_SUCCESS(err_code);
+
+    p_crazyflie->conn_handle = BLE_CONN_HANDLE_INVALID;
+    p_crazyflie->data_handler = p_crazyflie_init->data_handler;
+    p_crazyflie->crtpdown_notification_enabled = false;
+
+    return NRF_SUCCESS;
+}
+
+void ble_crazyflie_on_ble_evt(ble_crazyflie_t *p_crazyflie, ble_evt_t const *p_ble_evt) {
+    if (p_crazyflie == NULL || p_ble_evt == NULL) {
+        return;
+    }
+
+    switch (p_ble_evt->header.evt_id) {
+        case BLE_GAP_EVT_CONNECTED:
+            on_connect(p_crazyflie, p_ble_evt);
+            break;
+        case BLE_GAP_EVT_DISCONNECTED:
+            on_disconnect(p_crazyflie, p_ble_evt);
+            break;
+        case BLE_GATTS_EVT_WRITE:
+            on_write(p_crazyflie, p_ble_evt);
+            break;
+        case BLE_EVT_TX_COMPLETE:
+            p_crazyflie->tx_pk_free++;
+            break;
+        default:
+            break;
+    }
+}
+
+static uint32_t send_crtpdown_notification(ble_crazyflie_t *p_crazyflie, uint8_t *p_data, uint16_t length) {
+    uint32_t err_code;
+    ble_gatts_hvx_params_t hvx_params;
+
+    VERIFY_PARAM_NOT_NULL(p_crazyflie);
+
+    if ((p_crazyflie->conn_handle == BLE_CONN_HANDLE_INVALID) || (!p_crazyflie->crtpdown_notification_enabled)) {
+        return NRF_ERROR_INVALID_STATE;
+    }
+
+    if (p_crazyflie->crtpdown_char_handles.value_handle == BLE_GATT_HANDLE_INVALID) {
+        return NRF_ERROR_INVALID_STATE;
+    }
+
+    memset(&hvx_params, 0, sizeof(hvx_params));
+
+    hvx_params.handle = p_crazyflie->crtpdown_char_handles.value_handle;
+    hvx_params.type = BLE_GATT_HVX_NOTIFICATION;
+    hvx_params.offset = 0;
+    hvx_params.p_len = &length;
+    hvx_params.p_data = p_data;
+
+    err_code = sd_ble_gatts_hvx(p_crazyflie->conn_handle, &hvx_params);
+    if (err_code == NRF_SUCCESS) {
+        NRF_LOG_INFO("Sent %d bytes\n", length);
+        p_crazyflie->tx_pk_free--;
+    } else {
+        NRF_LOG_ERROR("Failed to send %d bytes: %d\n", length, err_code);
+    }
+
+    return err_code;
+}
+
+uint32_t ble_crazyflie_send_packet(ble_crazyflie_t *p_crazyflie, uint8_t *p_data, uint16_t length) {
+    uint32_t err_code;
+    uint8_t packet[32];
+
+    if (length > 31) {
+        return NRF_ERROR_INVALID_PARAM;
+    }
+
+    NRF_LOG_DEBUG("Tx Pk free: %d\n", p_crazyflie->tx_pk_free);
+
+    packet[0] = 0x80 | length;
+
+    if (length > GATT_MTU_SIZE_DEFAULT - 3 - 1) {
+        if (p_crazyflie->tx_pk_free < 2) {
+            return NRF_ERROR_NO_MEM;
         }
 
-        if(received && !crtpPacketReceived) {
-          memcpy(rxPacket.data, pkdata, length);
-          rxPacket.size = length;
-          crtpPacketReceived = true;
+        memcpy(packet+1, p_data, GATT_MTU_SIZE_DEFAULT - 3 - 1);
+        err_code = send_crtpdown_notification(p_crazyflie, packet, GATT_MTU_SIZE_DEFAULT - 3 - 1 + 1);
+        VERIFY_SUCCESS(err_code);
+        memcpy(packet+1, p_data+GATT_MTU_SIZE_DEFAULT - 3, length - (GATT_MTU_SIZE_DEFAULT - 3 - 1));
+        err_code = send_crtpdown_notification(p_crazyflie, packet, length - (GATT_MTU_SIZE_DEFAULT - 3 - 1) + 1);
+        VERIFY_SUCCESS(err_code);
+    } else {
+        if (p_crazyflie->tx_pk_free < 1) {
+            return NRF_ERROR_NO_MEM;
         }
-      }
-      break;
-    default:
-      break;
-  }
-}
 
+        memcpy(packet+1, p_data, length);
+        err_code = send_crtpdown_notification(p_crazyflie, packet, length+1);
+        VERIFY_SUCCESS(err_code);
+    }
 
-uint32_t ble_crazyflies_init(uint8_t uuidType)
-{
-  uint32_t err;
-  ble_uuid_t  service_uuid;
-  ble_uuid_t  crtp_uuid;
-  uint16_t service_handle;
-  uint8_t initial_value = 0xFF;
-  ble_gatts_attr_md_t cccd_md;
-
-  service_uuid.uuid = UUID_CRAZYFLIE_SERVICE;
-  service_uuid.type = uuidType;
-
-  err = sd_ble_gatts_service_add(BLE_GATTS_SRVC_TYPE_PRIMARY,
-                                 &service_uuid,
-                                 &service_handle);
-  ERROR_CHECK(err);
-
-  /* Bidirectional full-length CRTP characteristic  */
-  memset(&cccd_md, 0, sizeof(cccd_md));
-
-  BLE_GAP_CONN_SEC_MODE_SET_OPEN(&cccd_md.read_perm);
-  BLE_GAP_CONN_SEC_MODE_SET_OPEN(&cccd_md.write_perm);
-  cccd_md.vloc       = BLE_GATTS_VLOC_STACK;
-
-  crtp_md.p_cccd_md  = &cccd_md;
-
-
-  crtp_uuid.type = uuidType;
-  crtp_uuid.uuid = UUID_CRAZYFLIE_CRTP;
-
-  crtp_attr.p_uuid = &crtp_uuid;
-  crtp_attr.p_value = &initial_value;
-  crtp_attr.init_len = 1;
-
-  err = sd_ble_gatts_characteristic_add(service_handle,
-                                        &crtp_md,
-                                        &crtp_attr,
-                                        &crtp_handle);
-
-  ERROR_CHECK(err);
-  /* Uplink (nrf receives) segmented CRTP characteristic */
-  memset(&cccd_md, 0, sizeof(cccd_md));
-
-  //BLE_GAP_CONN_SEC_MODE_SET_OPEN(&cccd_md.read_perm);
-  //BLE_GAP_CONN_SEC_MODE_SET_OPEN(&cccd_md.write_perm);
-  //cccd_md.vloc       = BLE_GATTS_VLOC_STACK;
-
-  crtp_md.p_cccd_md  = NULL; //&cccd_md;
-
-
-  crtp_uuid.type = uuidType;
-  crtp_uuid.uuid = UUID_CRAZYFLIE_CRTP_UP;
-
-  crtpupdown_attr.p_uuid = &crtp_uuid;
-  crtpupdown_attr.p_value = &initial_value;
-  crtpupdown_attr.init_len = 1;
-
-  err = sd_ble_gatts_characteristic_add(service_handle,
-                                        &crtpup_md,
-                                        &crtpupdown_attr,
-                                        &crtpup_handle);
-
-  ERROR_CHECK(err);
-  /* Downlink (nrf Sends) segmented CRTP characteristic */
-  memset(&cccd_md, 0, sizeof(cccd_md));
-
-  BLE_GAP_CONN_SEC_MODE_SET_OPEN(&cccd_md.read_perm);
-  BLE_GAP_CONN_SEC_MODE_SET_OPEN(&cccd_md.write_perm);
-  cccd_md.vloc       = BLE_GATTS_VLOC_STACK;
-
-  crtpdown_md.p_cccd_md  = &cccd_md;
-
-
-  crtp_uuid.type = uuidType;
-  crtp_uuid.uuid = UUID_CRAZYFLIE_CRTP_DOWN;
-
-  crtpupdown_attr.p_uuid = &crtp_uuid;
-  crtpupdown_attr.p_value = &initial_value;
-  crtpupdown_attr.init_len = 1;
-
-  err = sd_ble_gatts_characteristic_add(service_handle,
-                                        &crtpdown_md,
-                                        &crtpupdown_attr,
-                                        &crtpdown_handle);
-
-  ERROR_CHECK(err);
-
-  return NRF_SUCCESS;
-}
-
-bool bleCrazyfliesIsPacketReceived()
-{
-  return crtpPacketReceived;
-}
-
-EsbPacket* bleCrazyfliesGetRxPacket()
-{
-  return &rxPacket;
-}
-
-
-void bleCrazyfliesReleaseRxPacket(EsbPacket* packet)
-{
-  crtpPacketReceived = false;
-}
-
-void bleCrazyfliesSendPacket(EsbPacket* packet)
-{
-  ble_gatts_hvx_params_t params;
-  uint16_t len = packet->size;
-  static unsigned char buffer[20];
-  static int pid = 0;
-
-  if (mConnHandle == 0xffffu)
-    return;
-
-
-  if (len>20)
-    len = 20;
-
-  memset(&params, 0, sizeof(params));
-  params.type = BLE_GATT_HVX_NOTIFICATION;
-  params.handle = crtp_handle.value_handle;
-  params.p_data = packet->data;
-  params.p_len = &len;
-
-  sd_ble_gatts_hvx(mConnHandle, &params);
-
-  // Send segmented packet
-  len = (packet->size>19)?20:packet->size+1;
-
-  buffer[0] = 0x80u | ((pid<<5)&0x60) | ((packet->size-1) & 0x1f);
-  memcpy(&buffer[1], packet->data, len);
-
-  memset(&params, 0, sizeof(params));
-  params.type = BLE_GATT_HVX_NOTIFICATION;
-  params.handle = crtpdown_handle.value_handle;
-  params.p_data = buffer;
-  params.p_len = &len;
-  sd_ble_gatts_hvx(mConnHandle, &params);
-
-  if (packet->size > 19) {
-    len = (packet->size-19)+1;
-
-    // Continuation contains only the PID
-    buffer[0] = ((pid<<5)&0x60);
-    memcpy(&buffer[1], &packet->data[19], len);
-
-    memset(&params, 0, sizeof(params));
-    params.type = BLE_GATT_HVX_NOTIFICATION;
-    params.handle = crtpdown_handle.value_handle;
-    params.p_data = buffer;
-    params.p_len = &len;
-    sd_ble_gatts_hvx(mConnHandle, &params);
-  }
-
-  pid++;
+    return NRF_SUCCESS;
 }

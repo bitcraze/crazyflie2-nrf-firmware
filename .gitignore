@@ -1,25 +1,18 @@
+*.d
 *~
 *.o
 *.bin
 *.elf
-JLink.log
-cf2_nrf.map
-cf2_nrf.hex
-tag_nrf.map
-tag_nrf.hex
-bolt_nrf.map
-bolt_nrf.hex
-flapper_nrf.map
-flapper_nrf.hex
 config.mk
 *.patch
 .cproject
 .project
 .settings
+_build/
+.vscode/
 
-#Nordic libs
-s110
-nrf51_sdk
+#Nordic libs etc.
+vendor/
 
 # jykell files
 docs/.jekyll-metadata

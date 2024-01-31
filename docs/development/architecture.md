@@ -3,10 +3,7 @@ title: Architecture
 page_id: architecture 
 ---
 
-When running without Softdevice (S110=0) the firmware is loaded at the
-beginning of the flash and is running alone in the CPU.
-
-When running with Softdevice (S110=1) independent of if BLE is activated
+The S130 softdevice is now mandatory, independent of if BLE is activated
 or not, the flash is filled as follow:
 ```
 +--------------+ 256k
@@ -20,7 +17,7 @@ or not, the flash is filled as follow:
 |              |
 |              |
 |  Firmware    |
-+--------------+ 88K
++--------------+ 108K
 |              |
 |              |
 |              |
@@ -34,7 +31,7 @@ or not, the flash is filled as follow:
 ```
 
  - **MBR** Softdevice Master Boot Record.
- - **Softdevice** S110 Bluetooth stack
+ - **Softdevice** S130 Bluetooth stack
  - **Firmware** This firmware
  - **Bootloader** Bluetooth/Shockburst bootloader
  - **MBS** Master Boot Switch

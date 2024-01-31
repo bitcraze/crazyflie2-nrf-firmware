@@ -5,7 +5,7 @@
 
 static const char *defaultDeviceType = "0;CF20;R=D";
 
-static char *deviceTypeStringLocation = (void*)0x3FFE0;
+static char *deviceTypeStringLocation = (void*)PLATFORM_DEVICE_DATA_FLASH_POS;
 
 static bool has_rfx2411n = false;
 static PmConfig pmConfig;

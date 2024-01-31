@@ -6,7 +6,7 @@
  *  ||  ||    /_____/_/\__/\___/_/   \__,_/ /___/\___/
  *
  * Crazyflie 2.0 NRF Firmware
- * Copyright (c) 2014, Bitcraze AB, All rights reserved.
+ * Copyright (c) 2024, Bitcraze AB, All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -28,9 +28,16 @@
 #include <string.h>
 
 #include "esb.h"
-#include "pm.h"
 
 #include <nrf.h>
+#include <ble_gap.h>
+#include <nrf_soc.h>
+
+//#define RSSI_VBAT_ACK_PACKET
+
+#ifdef RSSI_VBAT_ACK_PACKET
+  #include "pm.h"
+#endif
 
 #define RXQ_LEN 8
 #define TXQ_LEN 8
@@ -479,9 +486,9 @@ void esbSetContwave(bool enable)
 #ifdef BLE
   if (bleEnabled) {
     if (enable) {
-      ble_advertising_stop();
+//      ble_advertising_stop();
     } else {
-      advertising_start();
+//      advertising_start();
     }
   }
 #endif
