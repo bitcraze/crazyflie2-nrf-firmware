@@ -310,29 +310,29 @@ flash_s130: $(SDK_ROOT)/components/softdevice/s130/hex/s130_nrf51_2.0.1_softdevi
                  -c "flash write_image erase $(SDK_ROOT)/components/softdevice/s130/hex/s130_nrf51_2.0.1_softdevice.hex" \
                  -c "reset run" -c shutdown
 
-flash_mbs: bootloaders/nrf_mbs_v1.0.hex
-	$(OPENOCD) -d2 -f $(OPENOCD_INTERFACE) $(OPENOCD_CMDS) -f $(OPENOCD_TARGET) -c init -c targets -c "reset halt" \
-                 -c "flash write_image erase $^" -c "verify_image $^" -c "reset halt" \
-	               -c "mww 0x4001e504 0x01" -c "mww 0x10001014 0x3F000" \
-	               -c "reset run" -c shutdown
+# flash_mbs: bootloaders/nrf_mbs_v1.0.hex
+# 	$(OPENOCD) -d2 -f $(OPENOCD_INTERFACE) $(OPENOCD_CMDS) -f $(OPENOCD_TARGET) -c init -c targets -c "reset halt" \
+#                  -c "flash write_image erase $^" -c "verify_image $^" -c "reset halt" \
+# 	               -c "mww 0x4001e504 0x01" -c "mww 0x10001014 0x3F000" \
+# 	               -c "reset run" -c shutdown
 
-flash_cload: bootloaders/cload_nrf_v1.0.hex
-	$(OPENOCD) -d2 -f $(OPENOCD_INTERFACE) $(OPENOCD_CMDS) -f $(OPENOCD_TARGET) -c init -c targets -c "reset halt" \
-                 -c "flash write_image erase $^" -c "verify_image $^" -c "reset halt" \
-	               -c "mww 0x4001e504 0x01" -c "mww 0x10001014 0x3F000" \
-	               -c "mww 0x4001e504 0x01" -c "mww 0x10001080 0x3A000" -c "reset run" -c shutdown
+# flash_cload: bootloaders/cload_nrf_v1.0.hex
+# 	$(OPENOCD) -d2 -f $(OPENOCD_INTERFACE) $(OPENOCD_CMDS) -f $(OPENOCD_TARGET) -c init -c targets -c "reset halt" \
+#                  -c "flash write_image erase $^" -c "verify_image $^" -c "reset halt" \
+# 	               -c "mww 0x4001e504 0x01" -c "mww 0x10001014 0x3F000" \
+# 	               -c "mww 0x4001e504 0x01" -c "mww 0x10001080 0x3A000" -c "reset run" -c shutdown
 
-flash_mbs_21: bootloaders/nrf_mbs_cf21.hex
-	$(OPENOCD) -d2 -f $(OPENOCD_INTERFACE) $(OPENOCD_CMDS) -f $(OPENOCD_TARGET) -c init -c targets -c "reset halt" \
-                 -c "flash write_image erase $^" -c "verify_image $^" -c "reset halt" \
-	               -c "mww 0x4001e504 0x01" -c "mww 0x10001014 0x3F000" \
-	               -c "reset run" -c shutdown
+# flash_mbs_21: bootloaders/nrf_mbs_cf21.hex
+# 	$(OPENOCD) -d2 -f $(OPENOCD_INTERFACE) $(OPENOCD_CMDS) -f $(OPENOCD_TARGET) -c init -c targets -c "reset halt" \
+#                  -c "flash write_image erase $^" -c "verify_image $^" -c "reset halt" \
+# 	               -c "mww 0x4001e504 0x01" -c "mww 0x10001014 0x3F000" \
+# 	               -c "reset run" -c shutdown
 
-flash_cload_21: bootloaders/cload_nrf_cf21.hex
-	$(OPENOCD) -d2 -f $(OPENOCD_INTERFACE) $(OPENOCD_CMDS) -f $(OPENOCD_TARGET) -c init -c targets -c "reset halt" \
-                 -c "flash write_image erase $^" -c "verify_image $^" -c "reset halt" \
-	               -c "mww 0x4001e504 0x01" -c "mww 0x10001014 0x3F000" \
-	               -c "mww 0x4001e504 0x01" -c "mww 0x10001080 0x3A000" -c "reset run" -c shutdown
+# flash_cload_21: bootloaders/cload_nrf_cf21.hex
+# 	$(OPENOCD) -d2 -f $(OPENOCD_INTERFACE) $(OPENOCD_CMDS) -f $(OPENOCD_TARGET) -c init -c targets -c "reset halt" \
+#                  -c "flash write_image erase $^" -c "verify_image $^" -c "reset halt" \
+# 	               -c "mww 0x4001e504 0x01" -c "mww 0x10001014 0x3F000" \
+# 	               -c "mww 0x4001e504 0x01" -c "mww 0x10001080 0x3A000" -c "reset run" -c shutdown
 
 mass_erase:
 	$(OPENOCD) -d2 -f $(OPENOCD_INTERFACE) $(OPENOCD_CMDS) -f $(OPENOCD_TARGET) -c init -c targets -c "reset halt" \
@@ -355,16 +355,16 @@ gdb: $(OUTPUT_DIRECTORY)/$(PROGRAM).out
 cload: $(OUTPUT_DIRECTORY)/$(PROGRAM).bin
 	$(CLOAD_SCRIPT) flash $(OUTPUT_DIRECTORY)/$(PROGRAM).bin nrf51-fw
 
-factory_reset:
-	make mass_erase
-	make flash_s130
-	make flash_mbs
-	make flash_cload
-	make flash
+# factory_reset:
+# 	make mass_erase
+# 	make flash_s130
+# 	make flash_mbs
+# 	make flash_cload
+# 	make flash
 
-factory_reset_21:
-	make mass_erase
-	make flash_s130
-	make flash_mbs_21
-	make flash_cload_21
-	make flash
+# factory_reset_21:
+# 	make mass_erase
+# 	make flash_s130
+# 	make flash_mbs_21
+# 	make flash_cload_21
+# 	make flash

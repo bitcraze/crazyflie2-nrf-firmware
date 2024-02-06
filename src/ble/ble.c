@@ -127,6 +127,8 @@
 #define SEC_PARAM_MIN_KEY_SIZE          7                                           /**< Minimum encryption key size. */
 #define SEC_PARAM_MAX_KEY_SIZE          16                                          /**< Maximum encryption key size. */
 
+#define TX_POWER_LEVEL                      (-16)                                      /**< TX Power Level value. This will be set both in the TX Power service, in the advertising data, and also used to set the radio transmit power. */
+
 #define DEAD_BEEF                       0xDEADBEEF                                  /**< Value used as error code on stack dump, can be used to identify stack location on stack unwind. */
 
 static uint16_t m_conn_handle = BLE_CONN_HANDLE_INVALID;                            /**< Handle of the current connection. */
@@ -856,6 +858,10 @@ int ble_init(void)
     // crazyflie2_pm_init();
     // crazyflie2_pm_set_state(PM_STATE_SYSTEM_ON);
 
+    // Set the tx power
+    err_code = sd_ble_gap_tx_power_set(TX_POWER_LEVEL) ;
+    APP_ERROR_CHECK(err_code);
+    
     err_code = app_mailbox_create(&m_uplink);
     APP_ERROR_CHECK(err_code);
 
