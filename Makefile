@@ -10,6 +10,15 @@ else
 BLE	  ?= 1    # BLE mode activated or not. If disabled, CRTP mode is active
 endif
 
+PYTHON            ?= python3
+
+# Cload is handled in a special way on windows in WSL to use the Windows python interpreter
+ifdef WSL_DISTRO_NAME
+CLOAD_SCRIPT      ?= python.exe -m cfloader
+else
+CLOAD_SCRIPT      ?= $(PYTHON) -m cfloader
+endif
+
 PROGRAM = $(PLATFORM)_nrf
 PROJECT_NAME     := crazyflie2_nrf_firmware
 TARGETS          := $(PROGRAM)
