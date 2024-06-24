@@ -44,14 +44,15 @@
 
 extern int bleEnabled;
 
-#define RXQ_LEN 8
-#define TXQ_LEN 8
-
 static bool isInit = true;
 
 static int channel = 80;
 static int datarate = esbDatarate2M;
+#if defined(RADIOTEST) && (RADIOTEST == 1)
 static int txpower = RADIO_TXPOWER_TXPOWER_Neg16dBm;
+#else
+static int txpower = RADIO_TXPOWER_TXPOWER_0dBm;
+#endif
 static bool contwave = false;
 static uint64_t address = 0xE7E7E7E7E7ULL;
 
@@ -152,38 +153,36 @@ static void setupTx(bool retry, bool empty)
       lastSentPacket = &ackPacket;
     }
   } else { // Send back empty ack (for P2P)
+#if defined(RADIOTEST) && (RADIOTEST == 1)
     ackPacket.size = 32;
-    NRF_RADIO->PACKETPTR = (uint32_t)&ackPacket;
     NRF_RADIO->PCNF1 |= RADIO_PCNF1_WHITEEN_Msk;
+#else
+    ackPacket.size = 0;
+    NRF_RADIO->PACKETPTR = (uint32_t)&ackPacket;
+#endif
   }
 
   NRF_RADIO->TXADDRESS = 0x00UL;
 
   //After being disabled the radio will automatically send the ACK
-  if (rs == doTx) {
-    // NRF_RADIO->TASKS_START = 1UL;
-    NRF_RADIO->SHORTS &= ~RADIO_SHORTS_DISABLED_RXEN_Msk;
-    NRF_RADIO->SHORTS |= RADIO_SHORTS_DISABLED_TXEN_Msk;
-    NRF_RADIO->TASKS_DISABLE = 1UL;
-  } else {
-    NRF_RADIO->SHORTS &= ~RADIO_SHORTS_DISABLED_RXEN_Msk;
-    NRF_RADIO->SHORTS |= RADIO_SHORTS_DISABLED_TXEN_Msk;
-    NRF_RADIO->TASKS_DISABLE = 1UL;
-  }
+
+  NRF_RADIO->SHORTS &= ~RADIO_SHORTS_DISABLED_RXEN_Msk;
+  NRF_RADIO->SHORTS |= RADIO_SHORTS_DISABLED_TXEN_Msk;
   
   rs = doTx;
-  
+  NRF_RADIO->TASKS_DISABLE = 1UL;
 }
 
-// static void setupRx()
-// {
-//   NRF_RADIO->PACKETPTR = (uint32_t)&rxPackets[rxq_head];
-
-//   NRF_RADIO->SHORTS &= ~RADIO_SHORTS_DISABLED_TXEN_Msk;
-//   NRF_RADIO->SHORTS |= RADIO_SHORTS_DISABLED_RXEN_Msk;
-//   rs = doRx;
-//   NRF_RADIO->TASKS_DISABLE = 1UL;
-// }
+#if !defined(RADIOTEST) || (RADIOTEST == 0)
+static void setupRx()
+{
+  NRF_RADIO->PACKETPTR = (uint32_t)&rxPackets[rxq_head];
+  NRF_RADIO->SHORTS &= ~RADIO_SHORTS_DISABLED_TXEN_Msk;
+  NRF_RADIO->SHORTS |= RADIO_SHORTS_DISABLED_RXEN_Msk;
+  rs = doRx;
+  NRF_RADIO->TASKS_DISABLE = 1UL;
+}
+#endif
 
 void RADIO_IRQHandler()
 {
@@ -279,7 +278,12 @@ void esbInterruptHandler()
       break;
     case doTx:
       //Setup RX for next packet
+#if defined(RADIOTEST) && (RADIOTEST == 1)
       setupTx(false, true);
+#else 
+      setupRx();
+#endif
+      
       break;
     }
   }
@@ -375,12 +379,14 @@ void esbInit()
   NRF_RADIO->SHORTS |= RADIO_SHORTS_DISABLED_TXEN_Msk;
   NRF_RADIO->SHORTS |= RADIO_SHORTS_DISABLED_RSSISTOP_Enabled;
 
-  // Set RX buffer and start RX
-  // rs = doRx;
-	// NRF_RADIO->PACKETPTR = (uint32_t)&rxPackets[rxq_head];
-  // NRF_RADIO->TASKS_RXEN = 1U;
-
+#if defined(RADIOTEST) && (RADIOTEST == 1)
   setupTx(false, true);
+#else
+  // Set RX buffer and start RX
+  rs = doRx;
+  NRF_RADIO->PACKETPTR = (uint32_t)&rxPackets[rxq_head];
+  NRF_RADIO->TASKS_RXEN = 1U;
+#endif
 
   isInit = true;
 }
@@ -482,7 +488,10 @@ void esbSendP2PPacket(uint8_t port, char *data, uint8_t length)
 
 void esbSetDatarate(EsbDatarate dr)
 {
-  //NOP
+#if !defined(RADIOTEST) || (RADIOTEST == 0)
+  datarate = dr;
+  esbReset();
+#endif
 }
 
 

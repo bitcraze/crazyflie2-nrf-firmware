@@ -4,10 +4,10 @@
 PLATFORM ?= cf2
 -include platform/platform_$(PLATFORM).mk
 
-ifeq ($(RADIOTEST),1)
+ifeq ($(RECIEVE_RADIOTEST),1)
 BLE      ?= 0    # BLE mode activated or not. If disabled, CRTP mode is active
 else
-BLE	  ?= 1    # BLE mode activated or not. If disabled, CRTP mode is active
+BLE	  ?= 1
 endif
 
 PYTHON            ?= python3
@@ -239,6 +239,10 @@ CFLAGS += -DUSE_APP_CONFIG
 
 ifeq ($(strip $(BLE)), 1)
 CFLAGS += -DBLE=1
+endif
+
+ifeq ($(strip $(RADIOTEST)), 1)
+CFLAGS += -DRADIOTEST=1
 endif
 
 # C++ flags common to all targets
