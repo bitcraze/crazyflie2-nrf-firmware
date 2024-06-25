@@ -245,6 +245,10 @@ ifeq ($(strip $(RADIOTEST)), 1)
 CFLAGS += -DRADIOTEST=1
 endif
 
+ifeq ($(strip $(EXT_ANTENNA)), 1)
+CFLAGS += -DUSE_EXT_ANTENNA=1
+endif
+
 # C++ flags common to all targets
 CXXFLAGS += \
 
