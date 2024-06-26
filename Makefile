@@ -4,7 +4,20 @@
 PLATFORM ?= cf2
 -include platform/platform_$(PLATFORM).mk
 
-BLE      ?= 1    # BLE mode activated or not. If disabled, CRTP mode is active
+ifeq ($(RECIEVE_RADIOTEST),1)
+BLE      ?= 0    # BLE mode activated or not. If disabled, CRTP mode is active
+else
+BLE	  ?= 1
+endif
+
+PYTHON            ?= python3
+
+# Cload is handled in a special way on windows in WSL to use the Windows python interpreter
+ifdef WSL_DISTRO_NAME
+CLOAD_SCRIPT      ?= python.exe -m cfloader
+else
+CLOAD_SCRIPT      ?= $(PYTHON) -m cfloader
+endif
 
 PROGRAM = $(PLATFORM)_nrf
 PROJECT_NAME     := crazyflie2_nrf_firmware
@@ -226,6 +239,14 @@ CFLAGS += -DUSE_APP_CONFIG
 
 ifeq ($(strip $(BLE)), 1)
 CFLAGS += -DBLE=1
+endif
+
+ifeq ($(strip $(RADIOTEST)), 1)
+CFLAGS += -DRADIOTEST=1
+endif
+
+ifeq ($(strip $(EXT_ANTENNA)), 1)
+CFLAGS += -DUSE_EXT_ANTENNA=1
 endif
 
 # C++ flags common to all targets

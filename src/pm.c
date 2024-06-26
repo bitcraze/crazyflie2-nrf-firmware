@@ -289,7 +289,7 @@ static void pmRunSystem(bool enable)
       nrf_gpio_cfg_output(RADIO_PA_RX_EN);
       nrf_gpio_cfg_output(RADIO_PA_MODE);
       nrf_gpio_cfg_output(RADIO_PA_ANT_SW);
-    #ifdef USE_EXT_ANTENNA
+    #if defined(USE_EXT_ANTENNA) && (USE_EXT_ANTENNA == 1)
       // Select u.FL antenna
       nrf_gpio_pin_clear(RADIO_PA_ANT_SW);
     #else
