@@ -58,3 +58,4 @@ Currently supported platforms are:
 * `tag`
 * `bolt`
 * `flapper`
+* `cf21bl`
