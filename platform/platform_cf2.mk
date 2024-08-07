@@ -1,1 +1,2 @@
+RADIOTEST = 1
 BLE=1
