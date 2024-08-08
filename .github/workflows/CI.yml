@@ -29,12 +29,12 @@ jobs:
       PLATFORM: ${{ matrix.platform }}
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Check and build
       run: docker run --rm -v ${PWD}:/module bitcraze/builder ./tools/build/build PLATFORM=$PLATFORM
 
     - name: Upload Build Artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ${{ matrix.platform }}-${{ github.sha }}
         path: _build/${{ matrix.platform }}_nrf.bin
