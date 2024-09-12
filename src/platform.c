@@ -74,7 +74,8 @@ int platformInitByDeviceType() {
     pmConfig.hasCharger = true;
     pmConfig.hasVbatSink = true;
 
-  } else if (0 == strcmp(deviceType, "CF21")) {
+  } else if ((0 == strcmp(deviceType, "CF21")) ||
+             (0 == strcmp(deviceType, "C21B"))) {
     has_rfx2411n = true;
     pmConfig.vbatFactor = ((3.0 / 2.0) / (100.0 / (100.0 + 200.0)));
     pmConfig.adcPrescalingSetup = ADC_CONFIG_INPSEL_AnalogInputTwoThirdsPrescaling;
