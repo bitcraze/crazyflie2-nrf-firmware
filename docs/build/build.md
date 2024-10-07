@@ -41,10 +41,8 @@ make BLE=0              # Make without BLE support
 
 make cload              # Flash firmware over radio
 
-make flash              # Flash firmware with jtag
-make factory_reset      # Erase device and flash softdevice, bootloaders, and firmware for Crazyflie 2.0
-make factory_reset_21   # Erase device and flash softdevice, bootloaders, and firmware for Crazyflie 2.1
-                        # The Crazyflie 2.1 needs to be powered by battery only for this to work
+make flash_jlink              # Flash firmware with jtag
+
 ```
 
 ## Platforms
