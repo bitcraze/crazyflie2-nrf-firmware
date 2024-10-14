@@ -9,7 +9,7 @@ Compiling with bluetooth support requires the nRF51_SDK and S130 packages.
 
 Just after cloning the repository:
 ``` bash
-./tools/fetch_dependencies.sh
+./tools/fetch-dependencies.sh
 ```
 
 will download the zips and unpack them.
