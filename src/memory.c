@@ -181,3 +181,74 @@ bool memorySyslink(struct syslinkPacket *pk) {
 
   return tx;
 }
+
+
+/**
+ * Return true if any discovered deck has:
+ *   - Header magic 0xEB at data[0]
+ *   - VID = 0xBC at data[5]
+ *   - PID = 0x12 at data[6]
+ *   - boardName element = "bcAI" in the key/value area
+ */
+bool memoryHasBcAiDeck(void)
+{
+  for (int i = 0; i < nMemory; i++)
+  {
+    const unsigned char *d = owCache[i].data;
+
+    // 1) Basic header sanity checks
+    if (d[0] != 0xEB) {
+      continue; // Not a valid Crazyflie deck memory header
+    }
+    if (d[5] != 0xBC || d[6] != 0x12) {
+      continue; // Not a deck with the AI-deck's VID/PID
+    }
+
+    // 2) key/value parse:
+    //    Byte 9 = dataLength. Then from d[10..(10+dataLength-1)]
+    //    we have a series of elements:
+    //      Element format = { element_id (1 byte), length (1 byte), data[] }
+    unsigned int dataLen = d[9];
+    if (dataLen == 0) {
+      // This deck has no key/value pairs
+      continue;
+    }
+
+    // Start parsing at offset = 10
+    unsigned int offset = 10;
+    // We must not exceed the memory we read, so also guard with 10 + dataLen <= 122
+    unsigned int endOffset = (10 + dataLen <= 122) ? (10 + dataLen) : 122;
+
+    bool foundBoardName = false;
+    while (offset + 2 <= endOffset)  // need at least element_id + length
+    {
+      uint8_t elementId = d[offset];
+      uint8_t length    = d[offset + 1];
+      offset += 2;  // move past id and length
+
+      if (offset + length > endOffset) {
+        break; // malformed or truncated
+      }
+
+      if (elementId == 1) {
+        // Element ID = 1 => boardName (string)
+        // Compare with "bcAI"
+        if (length == 4 && memcmp(&d[offset], "bcAI", 4) == 0) {
+          foundBoardName = true;
+          // We can break early since we only care about one match
+          break;
+        }
+      }
+
+      // Move to next element
+      offset += length;
+    }
+
+    if (foundBoardName) {
+      return true; // This deck is the bcAI deck
+    }
+  }
+
+  // No matching deck found
+  return false;
+}

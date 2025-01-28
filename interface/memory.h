@@ -32,6 +32,8 @@ void memoryInit();
 
 bool memorySyslink(struct syslinkPacket *pk);
 
+bool memoryHasBcAiDeck(void);
+
 struct memoryCommand_s {
   uint8_t nmem;
   union {
