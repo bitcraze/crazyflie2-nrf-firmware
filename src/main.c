@@ -114,7 +114,7 @@ int main()
   // moving from bootloader to firmware. Without this
   // the GAP8 might freeze and needs to be powered off
   // for a while before recovering.
-  msDelay(1000);
+  msDelay(10000);
 
   if (bleEnabled) {
 #ifdef BLE
