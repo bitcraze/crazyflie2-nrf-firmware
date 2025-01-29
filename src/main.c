@@ -121,7 +121,7 @@ int main()
   // - If bcAI is connected, wait 10s to ensure stable operation.
   // - Otherwise, skip or use a minimal delay.
   if (bcAiPresent) {
-    msDelay(10000);
+    msDelay(5000);
   } else {
     msDelay(0);
   }
