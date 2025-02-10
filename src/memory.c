@@ -186,11 +186,11 @@ bool memorySyslink(struct syslinkPacket *pk) {
 /**
  * Return true if any discovered deck has:
  *   - Header magic 0xEB at data[0]
- *   - VID = 0xBC at data[5]
- *   - PID = 0x12 at data[6]
- *   - boardName element = "bcAI" in the key/value area
+ *   - Specified VID at data[5]
+ *   - Specified PID at data[6]
+ *   - boardName element matching the provided boardName in the key/value area
  */
-bool memoryHasBcAiDeck(void)
+bool memoryHasDeck(uint8_t vid, uint8_t pid, const char *boardName)
 {
   for (int i = 0; i < nMemory; i++)
   {
@@ -200,8 +200,8 @@ bool memoryHasBcAiDeck(void)
     if (d[0] != 0xEB) {
       continue; // Not a valid Crazyflie deck memory header
     }
-    if (d[5] != 0xBC || d[6] != 0x12) {
-      continue; // Not a deck with the AI-deck's VID/PID
+    if (d[5] != vid || d[6] != pid) {
+      continue; // Not a deck with the specified VID/PID
     }
 
     // 2) key/value parse:
@@ -232,8 +232,8 @@ bool memoryHasBcAiDeck(void)
 
       if (elementId == 1) {
         // Element ID = 1 => boardName (string)
-        // Compare with "bcAI"
-        if (length == 4 && memcmp(&d[offset], "bcAI", 4) == 0) {
+        // Compare with provided boardName
+        if (length == strlen(boardName) && memcmp(&d[offset], boardName, length) == 0) {
           foundBoardName = true;
           // We can break early since we only care about one match
           break;
@@ -245,7 +245,7 @@ bool memoryHasBcAiDeck(void)
     }
 
     if (foundBoardName) {
-      return true; // This deck is the bcAI deck
+      return true; // This deck matches the specified criteria
     }
   }
 

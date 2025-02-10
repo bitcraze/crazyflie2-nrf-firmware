@@ -71,6 +71,10 @@ static void mainloop(void);
 #undef BLE
 #endif
 
+#define MEMORY_BITCRAZE_VID 0xBC
+#define MEMORY_AIDECK_PID 0x12
+#define MEMORY_AIDECK_BOARDNAME "bcAI"
+
 #ifdef BLE
 int volatile bleEnabled = 1;
 #else
@@ -115,7 +119,7 @@ int main()
   // To prevent this, we introduce a delay when a specific deck (bcAI) is detected.
 
   // Check if the bcAI deck is attached
-  bool bcAiPresent = memoryHasBcAiDeck();
+  bool bcAiPresent = memoryHasDeck(MEMORY_BITCRAZE_VID, MEMORY_AIDECK_PID, MEMORY_AIDECK_BOARDNAME);
 
   // Apply a delay based on deck presence:
   // - If bcAI is connected, wait 10s to ensure stable operation.
