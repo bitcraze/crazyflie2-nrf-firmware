@@ -31,6 +31,7 @@
 
 #include "syslink.h"
 
+#include "crc32_calc.h"
 #include "ow.h"
 #include "ownet.h"
 #include "ds2431.h"
@@ -43,6 +44,14 @@ extern int bleEnabled;
 
 #define OW_MAX_CACHED 4
 static struct {unsigned char address[8]; unsigned char data[122];} owCache[OW_MAX_CACHED];
+
+#define DECK_INFO_HEADER_ID       0xEB
+#define DECK_INFO_HEADER_SIZE     7
+#define DECK_INFO_NAME            1
+#define DECK_INFO_TLV_VERSION     0
+#define DECK_INFO_TLV_VERSION_POS 8
+#define DECK_INFO_TLV_LENGTH_POS  9
+#define DECK_INFO_TLV_DATA_POS    10
 
 static void cacheMemory(int nMem)
 {
@@ -180,4 +189,149 @@ bool memorySyslink(struct syslinkPacket *pk) {
   }
 
   return tx;
+}
+
+#pragma pack(push, 1)
+typedef struct deckInfo_s {
+    union {
+        struct {
+            uint8_t header;
+            uint32_t usedPins;
+            uint8_t vid;
+            uint8_t pid;
+            uint8_t crc;          // CRC of the header (LSB of the 32-bit CRC)
+            uint8_t rawTlv[104];
+        };
+        uint8_t raw[112];
+    };
+
+    struct {
+        uint8_t* data; // pointer to the TLV data start
+        int length;    // length of the TLV data
+    } tlv;
+} DeckInfo;
+#pragma pack(pop)
+
+
+/*
+ * TLV scanning helpers
+ */
+
+static int findType(const uint8_t *tlvData, int tlvLength, int type)
+{
+    int pos = 0;
+    while (pos < tlvLength) {
+        int currentType = tlvData[pos];
+        int lengthField = tlvData[pos + 1];
+        if (currentType == type) {
+            return pos;
+        }
+        // move past this TLV: 1 byte for type, 1 for length, plus payload
+        pos += (2 + lengthField);
+    }
+    return -1;
+}
+
+static bool deckTlvHasElement(const uint8_t *tlvData, int tlvLength, int type)
+{
+    return (findType(tlvData, tlvLength, type) >= 0);
+}
+
+static int deckTlvGetString(const uint8_t *tlvData, int tlvLength, int type,
+                            char *stringOut, int maxLen)
+{
+    int pos = findType(tlvData, tlvLength, type);
+    if (pos < 0) {
+        if (maxLen > 0) {
+            stringOut[0] = '\0';
+        }
+        return -1;
+    }
+
+    int strLen = tlvData[pos + 1];
+    if (strLen >= maxLen) {
+        strLen = maxLen - 1;
+    }
+    memcpy(stringOut, &tlvData[pos + 2], strLen);
+    stringOut[strLen] = '\0';
+
+    return strLen;
+}
+
+// Returns true if a deck with the given vid/pid and board name is found in memory
+bool memoryHasDeck(uint8_t vid, uint8_t pid, const char *boardName)
+{
+    for (int i = 0; i < nMemory; i++) {
+        DeckInfo info;
+        // Copy up to 112 bytes from owCache[i].data
+        memcpy(info.raw, owCache[i].data, sizeof(info.raw));
+
+        // 1) Check the header
+        if (info.header != DECK_INFO_HEADER_ID) {
+            continue; // Not a valid deck
+        }
+
+        // 2) Compute the full 32-bit CRC for the deck info header, then compare its LSB
+        uint32_t fullCrc = crc32CalculateBuffer(info.raw, DECK_INFO_HEADER_SIZE);
+        uint8_t  computed = (uint8_t)(fullCrc & 0xFF);
+        if (info.crc != computed) {
+            // Mismatch
+            continue;
+        }
+
+        // 3) Check vid/pid
+        if (info.vid != vid || info.pid != pid) {
+            continue;
+        }
+
+        // 4) Check the TLV version
+        uint8_t version = info.raw[DECK_INFO_TLV_VERSION_POS];
+        if (version != DECK_INFO_TLV_VERSION) {
+            continue;
+        }
+
+        // 5) Get the length of the TLV block
+        uint8_t tlvLen = info.raw[DECK_INFO_TLV_LENGTH_POS];
+
+        // 6) Setup TLV area
+        info.tlv.data   = &info.raw[DECK_INFO_TLV_DATA_POS];
+        info.tlv.length = tlvLen;
+
+        // 7) Check the TLV CRC
+        //    (Compute a CRC from offset 8 (version) through offset 9+tlvLen,
+        //     then compare its LSB to the byte right after the TLV data)
+        {
+          // Ensure we don’t go out of bounds accessing info.raw[DECK_INFO_TLV_DATA_POS + tlvLen]
+          if ((DECK_INFO_TLV_DATA_POS + tlvLen) < sizeof(info.raw)) {
+              uint8_t storedTlvCrc = info.raw[DECK_INFO_TLV_DATA_POS + tlvLen];
+
+              // Compute a 32-bit CRC on [ version..(version+tlvLen+1) ],
+              // i.e. info.raw[8..(9+tlvLen)], which is (tlvLen + 2) bytes
+              uint32_t computedTlvCrc = crc32CalculateBuffer(
+                  &info.raw[DECK_INFO_TLV_VERSION_POS],
+                  (tlvLen + 2)
+              );
+
+              if ((computedTlvCrc & 0xFF) != storedTlvCrc) {
+                  // TLV region corrupt
+                  continue;
+              }
+          } else {
+              // If there's no room for the stored TLV CRC byte, it's invalid
+              continue;
+          }
+      }
+
+        // 8) Check for board name in TLV
+        if (deckTlvHasElement(info.tlv.data, info.tlv.length, DECK_INFO_NAME)) {
+            char foundName[64];
+            deckTlvGetString(info.tlv.data, info.tlv.length,
+                             DECK_INFO_NAME, foundName, sizeof(foundName));
+            if (strcmp(foundName, boardName) == 0) {
+                return true;
+            }
+        }
+    }
+
+    return false; // not found
 }

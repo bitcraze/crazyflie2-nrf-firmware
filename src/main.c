@@ -71,6 +71,10 @@ static void mainloop(void);
 #undef BLE
 #endif
 
+#define MEMORY_BITCRAZE_VID 0xBC
+#define MEMORY_AIDECK_PID 0x12
+#define MEMORY_AIDECK_BOARDNAME "bcAI"
+
 #ifdef BLE
 int volatile bleEnabled = 1;
 #else
@@ -109,12 +113,22 @@ int main()
   systickInit();
   memoryInit();
 
-  // This is needed to avoid putting the GAP8 into an
-  // undefined state when powering off/on quickly or
-  // moving from bootloader to firmware. Without this
-  // the GAP8 might freeze and needs to be powered off
-  // for a while before recovering.
-  msDelay(1000);
+  // The GAP8 can enter an undefined state if the system is powered off/on too quickly
+  // or transitions directly from the bootloader to firmware. If this happens, the GAP8
+  // might freeze and require a prolonged power-off period to recover.
+  // To prevent this, we introduce a delay when a specific deck (bcAI) is detected.
+
+  // Check if the bcAI deck is attached
+  bool bcAiPresent = memoryHasDeck(MEMORY_BITCRAZE_VID, MEMORY_AIDECK_PID, MEMORY_AIDECK_BOARDNAME);
+
+  // Apply a delay based on deck presence:
+  // - If bcAI is connected, wait 10s to ensure stable operation.
+  // - Otherwise, skip or use a minimal delay.
+  if (bcAiPresent) {
+    msDelay(5000);
+  } else {
+    msDelay(0);
+  }
 
   if (bleEnabled) {
 #ifdef BLE

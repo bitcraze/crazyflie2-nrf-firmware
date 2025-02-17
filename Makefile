@@ -116,6 +116,7 @@ SRC_FILES += $(PROJ_DIR)/platform_$(PLATFORM).c
 SRC_FILES += $(PROJ_DIR)/debug.c
 SRC_FILES += $(PROJ_DIR)/systick.c
 SRC_FILES += $(PROJ_DIR)/shutdown.c
+SRC_FILES += $(PROJ_DIR)/crc32_calc.c
 
 # Include folders common to all targets
 INC_FOLDERS += $(SDK_ROOT)/components/softdevice/s130/headers

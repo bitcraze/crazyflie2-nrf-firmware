@@ -32,6 +32,8 @@ void memoryInit();
 
 bool memorySyslink(struct syslinkPacket *pk);
 
+bool memoryHasDeck(uint8_t vid, uint8_t pid, const char *boardName);
+
 struct memoryCommand_s {
   uint8_t nmem;
   union {
