@@ -127,7 +127,8 @@ int main()
   if (bcAiPresent) {
     msDelay(5000);
   } else {
-    msDelay(0);
+    // Short boot delay needed for stability, reason unknown
+    msDelay(100);
   }
 
   if (bleEnabled) {
