@@ -62,7 +62,7 @@ void owInit(void)
   // CC0 sets OWPIN to 0
   // CC1 sets OWPIN to 1
   // CC2 Sampling of the GPIO
-  // CC3 stops the timer and clear a flag (interrup routine defined in owlnk.c)
+  // CC3 stops the timer and clear a flag (interrupt routine defined in owlnk.c)
 
   NRF_TIMER1->PRESCALER = 0;
 /*
