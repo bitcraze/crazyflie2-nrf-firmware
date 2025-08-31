@@ -4,7 +4,7 @@ page_id: home
 ---
 
 Source code of the firmware running in the Crazyflie 2.X nRF51822.
-This microcontroller have a couple of roles:
+This microcontroller has a couple of roles:
  - Power management (ON/OFF logic and battery handling)
  - Radio communication
    - Enhanced Shockburst compatible with Crazyradio (PA)
