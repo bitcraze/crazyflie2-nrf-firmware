@@ -41,7 +41,7 @@
  */
 #define PM_CHARGE_MIN_TEMP  (15.0)
 #define PM_CHARGE_MAX_TEMP  (60.0)
-#define PM_CHARE_HYSTERESIS (1.0)
+#define PM_CHARGE_HYSTERESIS (1.0)
 
 //#define ENABLE_FAST_CHARGE_1A
 //#define RFX2411N_BYPASS_MODE
@@ -432,8 +432,8 @@ void pmProcess() {
       nrf_gpio_pin_set(PM_CHG_EN);
 //      LED_OFF();
     }
-    else if (temp > PM_CHARGE_MIN_TEMP + PM_CHARE_HYSTERESIS  &&
-             temp < PM_CHARGE_MAX_TEMP - PM_CHARE_HYSTERESIS)
+    else if (temp > PM_CHARGE_MIN_TEMP + PM_CHARGE_HYSTERESIS  &&
+             temp < PM_CHARGE_MAX_TEMP - PM_CHARGE_HYSTERESIS)
     {
       // Enable charging
       nrf_gpio_pin_clear(PM_CHG_EN);
