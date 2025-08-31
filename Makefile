@@ -4,7 +4,7 @@
 PLATFORM ?= cf2
 -include platform/platform_$(PLATFORM).mk
 
-ifeq ($(RECIEVE_RADIOTEST),1)
+ifeq ($(RECEIVE_RADIOTEST),1)
 BLE      ?= 0    # BLE mode activated or not. If disabled, CRTP mode is active
 else
 BLE	  ?= 1
