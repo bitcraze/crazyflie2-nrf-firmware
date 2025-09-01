@@ -67,8 +67,8 @@ void UART0_IRQHandler()
   }
 
   // Push data in queue
-  rxq[head++] = NRF_UART0->RXD;
-  if (head >= Q_LENGTH) head = 0;
+  rxq[head] = NRF_UART0->RXD;
+  head = nhead;
 }
 
 void uartInit()
