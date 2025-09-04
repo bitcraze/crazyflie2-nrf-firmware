@@ -35,9 +35,9 @@
  * |  START   | TYPE | LEN | DATA        |   CKSUM   |
  * +----+-----+------+-----+=============+-----+-----+
  *
- * - Start is 2 bytes constant, defined bellow
+ * - Start is 2 bytes constant, defined below
  * - Length and type are uint8_t
- * - Length define the data length
+ * - Length defines the data length
  * - CKSUM is 2 bytes Fletcher 8 bit checksum. See rfc1146.
  *   Checksum is calculated with TYPE, LEN and DATA
  */
