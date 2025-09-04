@@ -31,7 +31,7 @@ make flash
 
 > **NOTE:**
 > If your Crazyflie does not start up correctly after flashing, this might be indicating a problem with a mismatched bootloader version.
-> Update your Crazyflie to the latest version using the cfclient, since this will also update your NRF bootloader to the latet version. Then try flashing your NRF firmware again
+> Update your Crazyflie to the latest version using the cfclient, since this will also update your NRF bootloader to the latest version. Then try flashing your NRF firmware again
 
 ## Debugging
 

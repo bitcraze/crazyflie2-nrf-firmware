@@ -19,7 +19,7 @@ a packet-based protocol.
 
 -   **START** is 2 bytes constant, 0xBC 0xCF.
 -   **TYPE** defines the type of packet
--   **LENGTH** and type are uint8\_t, defines the data length.
+-   **LENGTH** and type are uint8\_t, length defines the data length.
 -   **CKSUM** is 2 bytes Fletcher 8 bit checksum. See
     [rfc1146](https://tools.ietf.org/html/rfc1146). calculated with
     TYPE, LEN and DATA.
