@@ -110,4 +110,7 @@ void esbSetContwave(bool enable);
 /* Set the address of the radio */
 void esbSetAddress(uint64_t address);
 
+/* Allow radio to start receiving (opens the startup gate) */
+void esbAllowStart(void);
+
 #endif //__ESB_H__
