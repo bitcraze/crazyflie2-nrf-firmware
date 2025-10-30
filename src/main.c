@@ -212,7 +212,7 @@ void mainloop()
       }
 
       // Check if we should open the gate
-      if (radioReadyCommandReceived || (systickGetTick() >= startupTime + 5000)) {
+      if (radioReadyCommandReceived || (systickGetTick() >= startupTime + 3000)) {
         esbAllowStart();
         radioStartupGateHandled = true;
       }
