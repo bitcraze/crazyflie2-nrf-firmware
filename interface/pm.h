@@ -49,4 +49,6 @@ PmState pmGetState();
 
 void pmSysBootloader(bool enable);
 
+void pmDeckctrlDfu(bool enable);
+
 #endif //__PM_H__
