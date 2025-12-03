@@ -56,10 +56,10 @@
   #define USE_OW_IO_PULLUP
   #define OW_PULLUP_PIN 9
   #define OW_PIN 8
-  #define WKUP_PIN 11
+  #define WKUP_PIN 12
 
-  #define N_IO_1 12
-  #define N_IO_2 11
+  #define N_IO_1 11
+  #define N_IO_2 12
 
   #define LED_PIN 13
 
@@ -80,10 +80,10 @@
   #define USE_OW_IO_PULLUP
   #define OW_PULLUP_PIN 12
   #define OW_PIN 8
-  #define WKUP_PIN 11
+  #define WKUP_PIN 12
 
-  #define N_IO_1 12
-  #define N_IO_2 11
+  #define N_IO_1 11
+  #define N_IO_2 12
 
   #define LED_PIN 10
 

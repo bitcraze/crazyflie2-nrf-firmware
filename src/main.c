@@ -434,6 +434,9 @@ static void handleSyslinkEvents(bool slReceived)
       case SYSLINK_PM_LED_OFF:
         LED_OFF();
         break;
+      case SYSLINK_PM_DECKCTRL_DFU:
+        pmDeckctrlDfu(slRxPacket.data[0]);
+        break;
       case SYSLINK_DEBUG_PROBE:
       {
         slTxPacket.type = SYSLINK_DEBUG_PROBE;
