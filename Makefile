@@ -19,6 +19,9 @@ else
 CLOAD_SCRIPT      ?= $(PYTHON) -m cfloader
 endif
 
+CLOAD_CMDS        ?=
+CLOAD_ARGS        ?=
+
 PROGRAM = $(PLATFORM)_nrf
 PROJECT_NAME     := crazyflie2_nrf_firmware
 TARGETS          := $(PROGRAM)
@@ -370,8 +373,13 @@ semihosting: $(OUTPUT_DIRECTORY)/$(PROGRAM).out
 gdb: $(OUTPUT_DIRECTORY)/$(PROGRAM).out
 	$(GDB) -ex "target remote localhost:3333" -ex "monitor reset halt" $^
 
-cload: $(OUTPUT_DIRECTORY)/$(PROGRAM).bin
-	$(CLOAD_SCRIPT) flash $(OUTPUT_DIRECTORY)/$(PROGRAM).bin nrf51-fw
+CLOAD ?= 1
+cload:
+ifeq ($(CLOAD), 1)
+	$(CLOAD_SCRIPT) $(CLOAD_CMDS) flash $(CLOAD_ARGS) $(OUTPUT_DIRECTORY)/$(PROGRAM).bin nrf51-fw
+else
+	@echo "Only cload build can be bootloaded. Launch build and cload with CLOAD=1"
+endif
 
 # factory_reset:
 # 	make mass_erase
