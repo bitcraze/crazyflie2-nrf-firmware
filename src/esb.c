@@ -72,6 +72,9 @@ static volatile int curr_up = 1;
 
 static volatile bool has_safelink;
 
+// Radio startup gate - prevents RX from starting until explicitly allowed
+static bool radioStartAllowed = false;
+
 static EsbPacket ackPacket;     // Empty ack packet
 static EsbPacket servicePacket; // Packet sent to answer a low level request
 static EsbPacket p2pPacket;     // Packet to send to other crazyflie in broadcast
@@ -382,10 +385,13 @@ void esbInit()
 #if defined(RADIOTEST) && (RADIOTEST == 1)
   setupTx(false, true);
 #else
-  // Set RX buffer and start RX
+  // Set RX buffer and start RX (only if gate is open)
   rs = doRx;
   NRF_RADIO->PACKETPTR = (uint32_t)&rxPackets[rxq_head];
-  NRF_RADIO->TASKS_RXEN = 1U;
+
+  if (radioStartAllowed) {
+    NRF_RADIO->TASKS_RXEN = 1U;
+  }
 #endif
 
   isInit = true;
@@ -553,4 +559,14 @@ void esbSetAddress(uint64_t addr)
   address = addr;
 
   esbReset();
+}
+
+void esbAllowStart(void)
+{
+  radioStartAllowed = true;
+
+  // If radio is already initialized, start RX immediately
+  if (isInit && !bleEnabled) {
+    NRF_RADIO->TASKS_RXEN = 1U;
+  }
 }

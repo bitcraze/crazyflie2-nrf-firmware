@@ -91,6 +91,7 @@ uint8_t syslinkGetRxCheckSum2ErrorCnt();
 #define SYSLINK_RADIO_P2P           0x08
 #define SYSLINK_RADIO_P2P_ACK       0x09
 #define SYSLINK_RADIO_P2P_BROADCAST 0x0A
+#define SYSLINK_RADIO_READY         0x0B
 
 
 #define SYSLINK_PM_SOURCE             0x10

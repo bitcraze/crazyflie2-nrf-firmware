@@ -102,6 +102,8 @@ static bool debugProbeReceivedChan = false;
 static bool debugProbeReceivedAddress = false;
 static bool debugProbeReceivedRate = false;
 
+static bool radioReadyCommandReceived = false;
+
 int main()
 {
   // Stop early if the platform is not supported
@@ -197,8 +199,24 @@ void mainloop()
   static bool broadcast;
   static bool p2p;
 
+  // Radio startup gate - wait for syslink command or timeout
+  static bool radioStartupGateHandled = false;
+  static uint32_t startupTime = 0;
+
   while(1)
   {
+    // Handle radio startup gate (only once)
+    if (!radioStartupGateHandled) {
+      if (startupTime == 0) {
+        startupTime = systickGetTick();
+      }
+
+      // Check if we should open the gate
+      if (radioReadyCommandReceived || (systickGetTick() >= startupTime + 3000)) {
+        esbAllowStart();
+        radioStartupGateHandled = true;
+      }
+    }
 #ifdef BLE
     if (bleEnabled) {
       if ((esbReceived == false) && ble_receive_packet(&esbRxPacket)) {
@@ -433,6 +451,13 @@ static void handleSyslinkEvents(bool slReceived)
         break;
       case SYSLINK_PM_LED_OFF:
         LED_OFF();
+        break;
+      case SYSLINK_RADIO_READY:
+        radioReadyCommandReceived = true;
+        // Send ACK back to STM32
+        slTxPacket.type = SYSLINK_RADIO_READY;
+        slTxPacket.length = 0;
+        syslinkSend(&slTxPacket);
         break;
       case SYSLINK_PM_DECKCTRL_DFU:
         pmDeckctrlDfu(slRxPacket.data[0]);
