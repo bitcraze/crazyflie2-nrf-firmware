@@ -82,6 +82,8 @@ void pmInit()
 
   nrf_gpio_cfg_input(PM_CHG_PIN, NRF_GPIO_PIN_PULLUP);
 
+  nrf_gpio_cfg_input(WKUP_PIN, NRF_GPIO_PIN_PULLDOWN);
+
   pmConfig = platformGetPmConfig();
 }
 
@@ -254,6 +256,45 @@ static void pmSysBoot(bool enable)
     nrf_gpio_cfg_input(STM_BOOT0_PIN, NRF_GPIO_PIN_PULLDOWN);
 
     uartDeinit();
+  }
+}
+
+static void delay(int tick) {
+  unsigned int startTick = systickGetTick();
+  while (systickGetTick() - startTick < tick);
+}
+
+void pmDeckctrlDfu(bool enable) {
+  // Set WKUP pin to enter DFU mode on deck controller
+  nrf_gpio_cfg_output(WKUP_PIN);
+  if (enable) {
+    nrf_gpio_pin_set(WKUP_PIN);
+  } else {
+    nrf_gpio_pin_clear(WKUP_PIN);
+  }
+  
+  // Cycle system power to reset the deck controller into DFU or normal mode
+  pmSetState(pmSysOff);
+  while (pmGetState() != pmSysOff) {
+    pmProcess();
+    delay(1);
+  }
+
+  delay(10); // Wait a bit to ensure power is down
+
+  pmSetState(pmSysRunning);
+  while (pmGetState() != pmSysRunning) {
+    pmProcess();
+    delay(1);
+  }
+
+  delay(10); // Wait a bit to ensure deck controller has booted
+
+  // Set WKUP pin back to input using the right pull configuration
+  if (enable) {
+    nrf_gpio_cfg_input(WKUP_PIN, NRF_GPIO_PIN_PULLUP);
+  } else {
+    nrf_gpio_cfg_input(WKUP_PIN, NRF_GPIO_PIN_PULLDOWN);
   }
 }
 

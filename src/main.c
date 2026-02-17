@@ -458,6 +458,8 @@ static void handleSyslinkEvents(bool slReceived)
         slTxPacket.type = SYSLINK_RADIO_READY;
         slTxPacket.length = 0;
         syslinkSend(&slTxPacket);
+      case SYSLINK_PM_DECKCTRL_DFU:
+        pmDeckctrlDfu(slRxPacket.data[0]);
         break;
       case SYSLINK_DEBUG_PROBE:
       {
