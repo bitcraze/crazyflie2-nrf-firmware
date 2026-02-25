@@ -86,10 +86,10 @@
 
 #define PM_ENABLE_CHARGING()       nrf_gpio_pin_clear(PM_CHG_EN)
 #define PM_DISABLE_CHARGING()      nrf_gpio_pin_set(PM_CHG_EN)
-//#define PM_CHARGE_DEBUG_LED_ON()
-#define PM_CHARGE_DEBUG_LED_ON()   LED_ON()
-//#define PM_CHARGE_DEBUG_LED_OFF()
-#define PM_CHARGE_DEBUG_LED_OFF()  LED_OFF()
+#define PM_CHARGE_DEBUG_LED_ON()
+//#define PM_CHARGE_DEBUG_LED_ON()   LED_ON()
+#define PM_CHARGE_DEBUG_LED_OFF()
+//#define PM_CHARGE_DEBUG_LED_OFF()  LED_OFF()
 
 extern int bleEnabled;
 
