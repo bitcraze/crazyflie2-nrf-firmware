@@ -117,5 +117,8 @@
 #define STM_SWD_SDIO_MOSI 25
 #define STM_SWD_CLK_CLK 28
 
+// Routed on CF21BL only but not conflicting on other boards.
+#define STM_HSE_CLK_PIN   23
+
 #endif //__PINOUT_H__
 
