@@ -45,6 +45,7 @@
 
 //#define ENABLE_FAST_CHARGE_1A
 //#define RFX2411N_BYPASS_MODE
+
 #if defined(ENABLE_8MHZ_HSE_CLK_TO_STM) && defined(BLE)
   #error "Can't enable 8MHz HSE clock to STM when BLE is enabled due to resource conflict."
 #endif
@@ -226,6 +227,9 @@ static void pmPowerSystem(bool enable)
     nrf_gpio_pin_clear(STM_NRST_PIN); //Hold STM reset
     nrf_gpio_pin_set(PM_VCCEN_PIN);
   } else {
+#ifdef ENABLE_8MHZ_HSE_CLK_TO_STM
+    nrf_gpio_cfg_input(STM_HSE_CLK_PIN, NRF_GPIO_PIN_NOPULL);
+#endif
     nrf_gpio_cfg_input(STM_NRST_PIN, NRF_GPIO_PIN_PULLDOWN);
     nrf_gpio_pin_clear(PM_VCCEN_PIN);
   }
