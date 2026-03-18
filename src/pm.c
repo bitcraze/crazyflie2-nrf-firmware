@@ -200,16 +200,21 @@ static void enable8MHzClockToSTM(void)
                           STM_HSE_CLK_PIN << GPIOTE_CONFIG_PSEL_Pos | 
                           GPIOTE_CONFIG_OUTINIT_Low << GPIOTE_CONFIG_OUTINIT_Pos;
                           
+  // Ensure TIMER0 is in a known state before configuring and starting it.
+  NRF_TIMER0->TASKS_STOP = 1;
+  NRF_TIMER0->TASKS_CLEAR = 1;
+  NRF_TIMER0->EVENTS_COMPARE[0] = 0;
+   
   NRF_TIMER0->PRESCALER = 0;
   // Adjust the output frequency by adjusting the CC. 
   NRF_TIMER0->CC[0] = 1;
-  NRF_TIMER0->SHORTS = TIMER_SHORTS_COMPARE0_CLEAR_Enabled << TIMER_SHORTS_COMPARE0_CLEAR_Pos;
+  NRF_TIMER0->SHORTS = TIMER_SHORTS_COMPARE0_CLEAR_Msk;
   NRF_TIMER0->TASKS_START = 1;
 
   NRF_PPI->CH[2].EEP = (uint32_t) &NRF_TIMER0->EVENTS_COMPARE[0];
   NRF_PPI->CH[2].TEP = (uint32_t) &NRF_GPIOTE->TASKS_OUT[0];
 
-  NRF_PPI->CHENSET = PPI_CHENSET_CH2_Enabled << PPI_CHENSET_CH2_Pos;
+  NRF_PPI->CHENSET = PPI_CHENSET_CH2_Msk;
 }
 #endif
 
