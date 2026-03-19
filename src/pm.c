@@ -172,9 +172,9 @@ static void pmNrfPower(bool enable)
 
 #ifdef PM_WAKEUP_NRF_ON_PGOOD
     // Configure the power good (VUSB) to wake up the NRF.
-    NRF_GPIO->PIN_CNF[PM_PGOOD_PIN] |= GPIO_PIN_CNF_SENSE_Msk;
+    NRF_GPIO->PIN_CNF[PM_PGOOD_PIN] |= (GPIO_PIN_CNF_SENSE_Low << GPIO_PIN_CNF_SENSE_Pos);
     // Make the MBS continue booting.    
-    NRF_POWER->GPREGRET = 0x20U;
+    NRF_POWER->GPREGRET |= 0x20U;
 #endif
 
     NRF_POWER->GPREGRET |= 0x01; // Workaround for not being able to determine reset reason...

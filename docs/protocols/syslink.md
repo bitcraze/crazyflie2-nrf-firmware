@@ -197,7 +197,7 @@ Reserved for P2P acknowledgments.
         | PORT | RSSI | DATA     |
         +------+------+==========+
 
-    Same format as [SYSLINK\_RADIO\_P2P](#radio_p2p).
+    Same format as [SYSLINK\_RADIO\_P2P](#syslink_radio_p2p).
 
 Sent from STM32 to NRF51 to transmit a P2P broadcast packet. The
 packet is sent immediately without buffering. If BLE is active it will be
@@ -271,7 +271,7 @@ SYSLINK\_PM\_BATTERY\_AUTOUPDATE packet.
 
 Sent by the STM32 to the NRF51 to enable periodic battery state and
 RSSI reporting. Until this packet is received, the NRF51 does not send
-SYSLINK\_PM\_BATTERY\_STATE or SYSLINK\_SYSLINK\_RADIO\_RSSI packets.
+SYSLINK\_PM\_BATTERY\_STATE or SYSLINK\_RADIO\_RSSI packets.
 
 ### SYSLINK\_PM\_SHUTDOWN\_REQUEST
 
