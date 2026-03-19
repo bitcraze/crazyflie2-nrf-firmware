@@ -83,7 +83,6 @@ void pmInit()
   nrf_gpio_pin_clear(PM_VCCEN_PIN);
 
   nrf_gpio_cfg_input(PM_PGOOD_PIN, NRF_GPIO_PIN_PULLUP);
-  //NRF_GPIO->PIN_CNF[PM_PGOOD_PIN] |= (GPIO_PIN_CNF_SENSE_Low << GPIO_PIN_CNF_SENSE_Pos);
 
   nrf_gpio_cfg_input(PM_CHG_PIN, NRF_GPIO_PIN_PULLUP);
 
@@ -170,6 +169,14 @@ static void pmNrfPower(bool enable)
     nrf_gpio_pin_clear(PM_CHG_EN);
 
     nrf_gpio_cfg_input(PM_VBAT_SINK_PIN, NRF_GPIO_PIN_NOPULL);
+
+#ifdef PM_WAKEUP_NRF_ON_PGOOD
+    // Configure the power good (VUSB) to wake up the NRF.
+    NRF_GPIO->PIN_CNF[PM_PGOOD_PIN] |= GPIO_PIN_CNF_SENSE_Msk;
+    // Make the MBS continue booting.    
+    NRF_POWER->GPREGRET = 0x20U;
+#endif
+
     NRF_POWER->GPREGRET |= 0x01; // Workaround for not being able to determine reset reason...
 
     if (bleEnabled) {
