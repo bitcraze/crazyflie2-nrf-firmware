@@ -52,7 +52,7 @@ nibble. In the rest of the page packet type are written with group.
 Radio packets
 -------------
 
-### RADIO\_RAW
+### SYSLINK\_RADIO\_RAW
 
 -   **Type**: 0x00
 -   **Data format**: Raw radio packet as sent in the air
@@ -60,17 +60,17 @@ Radio packets
 This packet carries the raw radio packet. The NRF51 acts as a radio
 bridge. Because the NRF51 does not have much memory and the STM32 is
 capable of bursting a lot of data a flow control rules has been made:
-The STM32 is allowed to send a RADIO\_RAW packet only when one
-RADIO\_RAW packet has been received.
+The STM32 is allowed to send a SYSLINK\_RADIO\_RAW packet only when one
+SYSLINK\_RADIO\_RAW packet has been received.
 
 The NRF51 is regularly sending CRTP NULL packet or empty packets to the
 STM32 to get the communication working both ways.
 
-**Note** So far RADIO\_RAW is the only syslink
+**Note** So far SYSLINK\_RADIO\_RAW is the only syslink
 packet that has flow control constrain, all other packets can be sent
 full duplex at any moment.
 
-### RADIO\_CHANNEL
+### SYSLINK\_RADIO\_CHANNEL
 
 -   **Type**: 0x01
 -   **Data format**: One uint8\_t indicating the radio channel
@@ -82,7 +82,7 @@ send back the same packet to confirm that the setting has been done.
 
 NRF51 radio channel are spaced by 1MHz from 2400MHz to 2525MHz.
 
-### RADIO\_DATARATE
+### SYSLINK\_RADIO\_DATARATE
 
 -   **Type**: 0x02
 -   **Data format**: One uint8\_t indicating the radio datarate.
@@ -101,7 +101,7 @@ Possible datarate:
  | 1      | 1Mbps|
  | 2      | 2Mbps|
 
-### RADIO\_CONTWAVE
+### SYSLINK\_RADIO\_CONTWAVE
 
 -   **Type**: 0x03
 -   **Data format**: One uint8\_t at 0 for disable, \>0 for enable.
@@ -115,7 +115,7 @@ mode used, among other thing, during manufacturing test. It will affect
 other wireless communication like Wifi and should be used with care in a
 test environment_
 
-### RADIO\_RSSI
+### SYSLINK\_RADIO\_RSSI
 
 -   **Type**: 0x04
 -   **Data format**: One uint8\_t indicating the last received packet
@@ -127,7 +127,7 @@ Packet sent 100 times per second to the STM32. Contains the power value
 of the latest received packet. The value is the same as reported by the
 NRF51: between 40 and 100 which means measurement of -40dBm to -100dBm.
 
-### RADIO\_ADDRESS
+### SYSLINK\_RADIO\_ADDRESS
 
 -   **Type**: 0x05
 -   **Data format**: 5 bytes representing the radio address (little-endian)
@@ -138,16 +138,16 @@ Packet sent to the NRF51 to set the 5-byte radio address to use. The
 NRF51 then sends back the same packet to confirm that the setting has
 been applied.
 
-### RADIO\_RAW\_BROADCAST
+### SYSLINK\_RADIO\_RAW\_BROADCAST
 
 -   **Type**: 0x06
 -   **Data format**: Raw radio packet received as a broadcast
 
-Similar to RADIO\_RAW but indicates the packet was received on the
+Similar to SYSLINK\_RADIO\_RAW but indicates the packet was received on the
 multicast address (local address 1) rather than the unicast address.
 Sent from NRF51 to STM32.
 
-### RADIO\_POWER
+### SYSLINK\_RADIO\_POWER
 
 -   **Type**: 0x07
 -   **Data format**: One int8\_t indicating the radio TX power in dBm
@@ -156,7 +156,7 @@ Packet sent to the NRF51 to set the radio transmit power. The NRF51
 then sends back the same packet to confirm that the setting has been
 applied.
 
-### RADIO\_P2P
+### SYSLINK\_RADIO\_P2P
 
 -   **Type**: 0x08
 -   **Data format**:
@@ -171,13 +171,13 @@ applied.
 
 Sent from NRF51 to STM32 when a unicast peer-to-peer packet is received.
 
-### RADIO\_P2P\_ACK
+### SYSLINK\_RADIO\_P2P\_ACK
 
 -   **Type**: 0x09
 
 Reserved for P2P acknowledgments.
 
-### RADIO\_P2P\_BROADCAST
+### SYSLINK\_RADIO\_P2P\_BROADCAST
 
 -   **Type**: 0x0A
 -   **Data format**:
@@ -197,7 +197,7 @@ Reserved for P2P acknowledgments.
         | PORT | RSSI | DATA     |
         +------+------+==========+
 
-    Same format as [RADIO\_P2P](#radio_p2p).
+    Same format as [SYSLINK\_RADIO\_P2P](#radio_p2p).
 
 Sent from STM32 to NRF51 to transmit a P2P broadcast packet. The
 packet is sent immediately without buffering. If BLE is active it will be
@@ -206,7 +206,7 @@ disabled automatically.
 When a P2P broadcast is received by the NRF51, it is forwarded to the
 STM32 using this same type with the received format.
 
-### RADIO\_READY
+### SYSLINK\_RADIO\_READY
 
 -   **Type**: 0x0B
 -   **Data format**: No data
@@ -271,7 +271,7 @@ SYSLINK\_PM\_BATTERY\_AUTOUPDATE packet.
 
 Sent by the STM32 to the NRF51 to enable periodic battery state and
 RSSI reporting. Until this packet is received, the NRF51 does not send
-SYSLINK\_PM\_BATTERY\_STATE or SYSLINK\_RADIO\_RSSI packets.
+SYSLINK\_PM\_BATTERY\_STATE or SYSLINK\_SYSLINK\_RADIO\_RSSI packets.
 
 ### SYSLINK\_PM\_SHUTDOWN\_REQUEST
 
@@ -410,9 +410,9 @@ Debug packets
         | ADDR  | CHAN | RATE | DROPPED | UART_ERR | UART_CNT | CKSUM1  | CKSUM2  |
         +-------+------+------+---------+----------+----------+---------+---------+
 
--   **ADDR**: uint8\_t, 1 if a RADIO\_ADDRESS command has been received
--   **CHAN**: uint8\_t, 1 if a RADIO\_CHANNEL command has been received
--   **RATE**: uint8\_t, 1 if a RADIO\_DATARATE command has been received
+-   **ADDR**: uint8\_t, 1 if a SYSLINK\_RADIO\_ADDRESS command has been received
+-   **CHAN**: uint8\_t, 1 if a SYSLINK\_RADIO\_CHANNEL command has been received
+-   **RATE**: uint8\_t, 1 if a SYSLINK\_RADIO\_DATARATE command has been received
 -   **DROPPED**: uint8\_t, 1 if UART data has been dropped
 -   **UART\_ERR**: uint8\_t, UART error flags
 -   **UART\_CNT**: uint8\_t, UART error count
