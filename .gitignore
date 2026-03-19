@@ -13,6 +13,8 @@ _build/
 
 #Nordic libs etc.
 vendor/
+nrf51_sdk/
+s110/
 
 # jykell files
 docs/.jekyll-metadata

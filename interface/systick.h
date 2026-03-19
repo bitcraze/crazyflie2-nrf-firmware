@@ -24,8 +24,14 @@
 #ifndef __SYSTICK_H__
 #define __SYSTICK_H__
 
+/**
+ * Initialize the systick timer. The systick will increment a tick count every 1ms.
+ */
 void systickInit();
 
+/**
+ * Return the current tick count. The tick is incremented every 1ms.
+ */
 unsigned int systickGetTick();
 
 #endif //__SYSTICK_H__
