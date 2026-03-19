@@ -10,3 +10,6 @@
 
 ## Enable 8mhz precision clock to STM32. Only on crazyflie brushless and build with BLE=0
 # CFLAGS += -DENABLE_8MHZ_HSE_CLK_TO_STM
+
+## Enable wake-up on VUSB power
+# CFLAGS += -DPM_WAKEUP_NRF_ON_PGOOD
