@@ -403,6 +403,9 @@ static void handleSyslinkEvents(bool slReceived)
       case SYSLINK_PM_ONOFF_SWITCHOFF:
         pmSetState(pmAllOff);
         break;
+      case SYSLINK_PM_ONOFF_STM_OFF:
+        pmSetState(pmSysOff);
+        break;
       case SYSLINK_OW_GETINFO:
       case SYSLINK_OW_READ:
       case SYSLINK_OW_SCAN:
