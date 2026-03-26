@@ -38,7 +38,7 @@ uint8_t getPowerStatusFlags();
 float pmGetVBAT(void);
 
 /* Get pre-built battery voltage response packet for direct radio ACK */
-uint8_t* pmGetVbatPacket(void);
+const uint8_t* pmGetVbatPacket(void);
 uint8_t pmGetVbatPacketSize(void);
 
 float pmGetISET(void);

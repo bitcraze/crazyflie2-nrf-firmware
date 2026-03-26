@@ -76,7 +76,7 @@ static float temp;
 
 // Pre-built battery voltage response packet for direct ACK in radio interrupt
 static uint8_t vbatResponsePacket[7] = {0xff, 0xfe, 0x04, 0, 0, 0, 0};
-static uint8_t vbatResponseSize = 7;
+static uint8_t vbatResponseSize = sizeof(vbatResponsePacket);
 
 void pmInit()
 {
@@ -401,7 +401,7 @@ float pmGetVBAT(void) {
 	return vBat;
 }
 
-uint8_t* pmGetVbatPacket(void) {
+const uint8_t* pmGetVbatPacket(void) {
   return vbatResponsePacket;
 }
 
@@ -468,7 +468,9 @@ void pmProcess() {
 
 	  if (adcState == adcVBAT) {
 		  vBat = (float) (rawValue / 1023.0) * 1.2 * pmConfig->vbatFactor;
+		  __disable_irq();
 		  memcpy(&vbatResponsePacket[3], &vBat, sizeof(float));
+		  __enable_irq();
 		  if (pmConfig->hasCharger) {
 		    pmStartAdc(adcISET);
 		  } else {
