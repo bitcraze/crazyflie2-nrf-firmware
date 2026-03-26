@@ -22,6 +22,7 @@
  * License along with this library.
  */
 #include <stdbool.h>
+#include <string.h>
 
 #include <nrf.h>
 #include <nrf_gpio.h>
@@ -72,6 +73,10 @@ static ADCState adcState = adcVBAT;
 static float vBat;
 static float iSet;
 static float temp;
+
+// Pre-built battery voltage response packet for direct ACK in radio interrupt
+static uint8_t vbatResponsePacket[7] = {0xff, 0xfe, 0x04, 0, 0, 0, 0};
+static uint8_t vbatResponseSize = 7;
 
 void pmInit()
 {
@@ -396,6 +401,14 @@ float pmGetVBAT(void) {
 	return vBat;
 }
 
+uint8_t* pmGetVbatPacket(void) {
+  return vbatResponsePacket;
+}
+
+uint8_t pmGetVbatPacketSize(void) {
+  return vbatResponseSize;
+}
+
 float pmGetISET(void) {
   return iSet;
 }
@@ -455,6 +468,7 @@ void pmProcess() {
 
 	  if (adcState == adcVBAT) {
 		  vBat = (float) (rawValue / 1023.0) * 1.2 * pmConfig->vbatFactor;
+		  memcpy(&vbatResponsePacket[3], &vBat, sizeof(float));
 		  if (pmConfig->hasCharger) {
 		    pmStartAdc(adcISET);
 		  } else {
