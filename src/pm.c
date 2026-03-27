@@ -214,7 +214,7 @@ static void pmNrfPower(bool enable)
 {
   if (!enable) {
     //stop NRF
-    PM_CHARGE_DEBUG_LED_OFF();
+    LED_OFF();
     // Turn off PA
     if (platformHasRfx2411n()) {
       nrf_gpio_pin_clear(RADIO_PA_RX_EN);
