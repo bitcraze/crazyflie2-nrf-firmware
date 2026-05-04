@@ -73,9 +73,10 @@ static volatile bool has_safelink;
 // Radio startup gate - prevents RX from starting until explicitly allowed
 static bool radioStartAllowed = false;
 
-static EsbPacket ackPacket;     // Empty ack packet
-static EsbPacket servicePacket; // Packet sent to answer a low level request
-static EsbPacket p2pPacket;     // Packet to send to other crazyflie in broadcast
+static EsbPacket ackPacket;                         // Empty ack packet
+static EsbPacket servicePacket;                     // Packet sent to answer a low level request
+static volatile bool servicePacketPending = false;  // Flag that indicates if servicepacket is supposed to be transmitted. Must be set to true to send servicePacket, and will be set to false once it is sent
+static EsbPacket p2pPacket;                         // Packet to send to other crazyflie in broadcast
 /* helper functions */
 
 static uint32_t swap_bits(uint32_t inp)
@@ -110,20 +111,18 @@ static void setupTx(bool retry, bool empty)
 
   if (!empty && retry) {
     NRF_RADIO->PACKETPTR = (uint32_t)lastSentPacket;
-  } else if (!empty) { // Non-empty retry
+  }
+  else if (!empty) { // Non-empty retry
     if (lastSentPacket != &ackPacket) {
       //No retry, TX payload has been sent!
       if (txq_head != txq_tail) {
         txq_tail = ((txq_tail+1)%TXQ_LEN);
       }
     }
-    if (lastSentPacket == &servicePacket) {
-      servicePacket.size = 0;
-    }
-
-    if (servicePacket.size) {
+    if (servicePacketPending) {
       NRF_RADIO->PACKETPTR = (uint32_t)&servicePacket;
       lastSentPacket = &servicePacket;
+      servicePacketPending = false;
     } else if (txq_tail != txq_head) {
       // Send next TX packet
       NRF_RADIO->PACKETPTR = (uint32_t)&txPackets[txq_tail];
@@ -221,6 +220,7 @@ void esbInterruptHandler()
           pk->data[1] == 0xfe && pk->data[2] == 0x04) {
         memcpy(servicePacket.data, pmGetVbatPacket(), pmGetVbatPacketSize());
         servicePacket.size = pmGetVbatPacketSize();
+        servicePacketPending = true;
         setupTx(false, false);
         return;
       }
@@ -231,6 +231,7 @@ void esbInterruptHandler()
         has_safelink = pk->data[2];
         memcpy(servicePacket.data, pk->data, 3);
         servicePacket.size = 3;
+        servicePacketPending = true;
         setupTx(false, false);
 
         // Reset packet counters
