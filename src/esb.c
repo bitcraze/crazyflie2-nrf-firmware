@@ -101,6 +101,11 @@ static uint32_t bytewise_bitswap(uint32_t inp)
        | (swap_bits(inp));
 }
 
+static void embedSafelinkCounters(EsbPacket *packet)
+{
+  packet->data[0] = (packet->data[0] & 0b11110011) | curr_up<<3 | curr_down<<2;
+}
+
 /* Radio protocol implementation */
 
 // Handles the queue
@@ -128,19 +133,19 @@ static void setupTx(bool retry, bool empty)
       // Send next TX packet
       NRF_RADIO->PACKETPTR = (uint32_t)&txPackets[txq_tail];
       if (has_safelink) {
-        txPackets[txq_tail].data[0] = (txPackets[txq_tail].data[0]&0xf3) | curr_up<<3 | curr_down<<2;
+        embedSafelinkCounters(&txPackets[txq_tail]);
       }
       lastSentPacket = &txPackets[txq_tail];
     } else {
       // Send empty ACK
 #ifdef RSSI_ACK_PACKET
       ackPacket.size = 3;
-      ackPacket.data[0] = 0b11110011 | curr_up<<3 | curr_down<<2;
+      ackPacket.data[0] = 0xf3;
       ackPacket.data[1] = 0x01;
       ackPacket.data[2] = NRF_RADIO->RSSISAMPLE;
 #elif defined RSSI_VBAT_ACK_PACKET
       ackPacket.size = 4 + sizeof(uint32_t);
-      ackPacket.data[0] = 0b11110011 | curr_up<<3 | curr_down<<2;
+      ackPacket.data[0] = 0xf3;
       ackPacket.data[1] = 0x01;
       ackPacket.data[2] = NRF_RADIO->RSSISAMPLE;
       ackPacket.data[3] = 0x02;
@@ -148,8 +153,11 @@ static void setupTx(bool retry, bool empty)
       memcpy(&ackPacket.data[4], &vBat, sizeof(uint32_t));
 #else
       ackPacket.size = 1;
-      ackPacket.data[0] = 0b11110011 | curr_up<<3 | curr_down<<2;
+      ackPacket.data[0] = 0xf3;
 #endif
+      if (has_safelink) {
+        embedSafelinkCounters(&ackPacket);
+      }
       NRF_RADIO->PACKETPTR = (uint32_t)&ackPacket;
       lastSentPacket = &ackPacket;
     }
