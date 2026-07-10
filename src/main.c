@@ -96,7 +96,7 @@ static void handleSyslinkEvents(bool slReceived);
 
 static void handleRadioCmd(struct esbPacket_s * packet);
 static void handleBootloaderCmd(struct esbPacket_s *packet);
-static void disableBle();
+static bool disableBle();
 
 static bool debugProbeReceivedChan = false;
 static bool debugProbeReceivedAddress = false;
@@ -349,7 +349,12 @@ static void handleSyslinkEvents(bool slReceived)
       case SYSLINK_RADIO_CHANNEL:
         if(slRxPacket.length == 1)
         {
-          esbSetChannel(slRxPacket.data[0]);
+          uint8_t channel = slRxPacket.data[0];
+          if (channel >= 126) {
+            break;
+          }
+
+          esbSetChannel(channel);
 
           slTxPacket.type = SYSLINK_RADIO_CHANNEL;
           slTxPacket.data[0] = slRxPacket.data[0];
@@ -362,7 +367,12 @@ static void handleSyslinkEvents(bool slReceived)
       case SYSLINK_RADIO_DATARATE:
         if(slRxPacket.length == 1)
         {
-          esbSetDatarate(slRxPacket.data[0]);
+          uint8_t datarate = slRxPacket.data[0];
+          if (datarate > esbDatarateBle1M) {
+            break;
+          }
+
+          esbSetDatarate(datarate);
 
           slTxPacket.type = SYSLINK_RADIO_DATARATE;
           slTxPacket.data[0] = slRxPacket.data[0];
@@ -374,7 +384,18 @@ static void handleSyslinkEvents(bool slReceived)
         break;
       case SYSLINK_RADIO_CONTWAVE:
         if(slRxPacket.length == 1) {
-          esbSetContwave(slRxPacket.data[0]);
+          uint8_t requestedMode = slRxPacket.data[0];
+
+          if (requestedMode > esbRadioTestModeModulated) {
+            break;
+          }
+
+          EsbRadioTestMode mode = requestedMode;
+          if ((mode != esbRadioTestModeDisabled) && !disableBle()) {
+            break;
+          }
+
+          esbSetRadioTestMode(mode);
 
           slTxPacket.type = SYSLINK_RADIO_CONTWAVE;
           slTxPacket.data[0] = slRxPacket.data[0];
@@ -693,13 +714,16 @@ static void handleBootloaderCmd(struct esbPacket_s *packet)
   }
 }
 
-static void disableBle() {
+static bool disableBle() {
 #ifdef BLE
   if (bleEnabled) {
-    sd_softdevice_disable();
+    if (sd_softdevice_disable() != NRF_SUCCESS) {
+      return false;
+    }
     bleEnabled = 0;
     esbInit();
   }
 #endif
   bleEnabled = 0;
+  return true;
 }

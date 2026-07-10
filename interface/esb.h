@@ -53,12 +53,18 @@ typedef struct esbPacket_s {
 
 typedef enum esbDatarate_e { esbDatarate250K=0,
                              esbDatarate1M=1,
-                             esbDatarate2M=2 } EsbDatarate;
+                             esbDatarate2M=2,
+                             esbDatarateBle1M=3 } EsbDatarate;
+
+typedef enum esbRadioTestMode_e { esbRadioTestModeDisabled=0,
+                                  esbRadioTestModeUnmodulated=1,
+                                  esbRadioTestModeModulated=2 } EsbRadioTestMode;
 
 /*** For compatibility ***/
 #define RADIO_RATE_250K esbDatarate250K
 #define RADIO_RATE_1M esbDatarate1M
 #define RADIO_RATE_2M esbDatarate2M
+#define RADIO_RATE_BLE_1M esbDatarateBle1M
 
 #define ESB_UNICAST_ADDRESS_MATCH 0
 #define ESB_MULTICAST_ADDRESS_MATCH 1
@@ -104,7 +110,10 @@ void esbSetTxPower(int power);
 /* Set output power in Dbm*/
 void esbSetTxPowerDbm(int8_t powerDbm);
 
-/* Set of disable radio continuous wave */
+/* Set or disable the radio test mode */
+void esbSetRadioTestMode(EsbRadioTestMode mode);
+
+/* Set or disable the legacy unmodulated continuous wave mode */
 void esbSetContwave(bool enable);
 
 /* Set the address of the radio */

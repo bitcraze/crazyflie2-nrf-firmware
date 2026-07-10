@@ -45,14 +45,18 @@ extern int bleEnabled;
 static bool isInit = true;
 
 static int channel = 80;
-static int datarate = esbDatarate2M;
+static EsbDatarate esbDatarate = esbDatarate2M;
+static EsbDatarate radioTestDatarate = esbDatarate2M;
 #if defined(RADIOTEST) && (RADIOTEST == 1)
 static int txpower = RADIO_TXPOWER_TXPOWER_Neg16dBm;
 #else
 static int txpower = RADIO_TXPOWER_TXPOWER_0dBm;
 #endif
-static bool contwave = false;
+static EsbRadioTestMode radioTestMode = esbRadioTestModeDisabled;
 static uint64_t address = 0xE7E7E7E7E7ULL;
+
+#define RADIO_TEST_PAYLOAD_SIZE 254
+static uint8_t radioTestPacket[RADIO_TEST_PAYLOAD_SIZE + 1] __attribute__((aligned(4)));
 
 static volatile enum {doTx, doRx} rs;      //Radio state
 
@@ -352,6 +356,77 @@ void esbInterruptHandler()
 // Max payload allowed in a packet
 #define PACKET1_PAYLOAD_SIZE             (63UL)
 
+static void configureRadioDatarate()
+{
+  EsbDatarate datarate = (radioTestMode == esbRadioTestModeDisabled) ?
+                         esbDatarate : radioTestDatarate;
+
+  switch (datarate) {
+  case esbDatarate250K:
+    NRF_RADIO->MODE = (RADIO_MODE_MODE_Nrf_250Kbit << RADIO_MODE_MODE_Pos);
+    break;
+  case esbDatarate1M:
+    NRF_RADIO->MODE = (RADIO_MODE_MODE_Nrf_1Mbit << RADIO_MODE_MODE_Pos);
+    break;
+  case esbDatarate2M:
+    NRF_RADIO->MODE = (RADIO_MODE_MODE_Nrf_2Mbit << RADIO_MODE_MODE_Pos);
+    break;
+  case esbDatarateBle1M:
+    // The SoftDevice normally applies the factory BLE radio tuning. Radio
+    // tests run after the SoftDevice has been disabled and must apply it.
+    if ((NRF_FICR->OVERRIDEEN & FICR_OVERRIDEEN_BLE_1MBIT_Msk) ==
+        FICR_OVERRIDEEN_BLE_1MBIT_Override) {
+      NRF_RADIO->OVERRIDE0 = NRF_FICR->BLE_1MBIT[0];
+      NRF_RADIO->OVERRIDE1 = NRF_FICR->BLE_1MBIT[1];
+      NRF_RADIO->OVERRIDE2 = NRF_FICR->BLE_1MBIT[2];
+      NRF_RADIO->OVERRIDE3 = NRF_FICR->BLE_1MBIT[3];
+      NRF_RADIO->OVERRIDE4 = NRF_FICR->BLE_1MBIT[4];
+    }
+    NRF_RADIO->MODE = (RADIO_MODE_MODE_Ble_1Mbit << RADIO_MODE_MODE_Pos);
+    break;
+  }
+}
+
+static void startUnmodulatedRadioTest()
+{
+  NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk;
+  NRF_RADIO->TEST = (RADIO_TEST_CONSTCARRIER_Enabled << RADIO_TEST_CONSTCARRIER_Pos) |
+                    (RADIO_TEST_PLLLOCK_Enabled << RADIO_TEST_PLLLOCK_Pos);
+  NRF_RADIO->TASKS_TXEN = 1U;
+}
+
+static void startModulatedRadioTest()
+{
+  uint8_t value = 0xA5;
+
+  radioTestPacket[0] = RADIO_TEST_PAYLOAD_SIZE;
+  for (int i = 1; i <= RADIO_TEST_PAYLOAD_SIZE; i++) {
+    value = (value >> 1) ^ ((value & 1) ? 0xB8 : 0);
+    radioTestPacket[i] = value;
+  }
+
+  NRF_RADIO->PREFIX0 = 0xCC;
+  NRF_RADIO->BASE0 = 0xCCCCCCCC;
+  NRF_RADIO->TXADDRESS = 0;
+
+  NRF_RADIO->PCNF0 = (0UL << RADIO_PCNF0_S1LEN_Pos) |
+                     (0UL << RADIO_PCNF0_S0LEN_Pos) |
+                     (8UL << RADIO_PCNF0_LFLEN_Pos);
+  NRF_RADIO->PCNF1 = (RADIO_PCNF1_WHITEEN_Enabled << RADIO_PCNF1_WHITEEN_Pos) |
+                     (RADIO_PCNF1_ENDIAN_Big << RADIO_PCNF1_ENDIAN_Pos) |
+                     (4UL << RADIO_PCNF1_BALEN_Pos) |
+                     (0UL << RADIO_PCNF1_STATLEN_Pos) |
+                     (255UL << RADIO_PCNF1_MAXLEN_Pos);
+  NRF_RADIO->DATAWHITEIV = 0x40;
+  NRF_RADIO->CRCCNF = (RADIO_CRCCNF_LEN_Disabled << RADIO_CRCCNF_LEN_Pos);
+  NRF_RADIO->PACKETPTR = (uint32_t)radioTestPacket;
+
+  NRF_RADIO->SHORTS = RADIO_SHORTS_END_DISABLE_Msk |
+                      RADIO_SHORTS_READY_START_Msk |
+                      RADIO_SHORTS_DISABLED_TXEN_Msk;
+  NRF_RADIO->TASKS_TXEN = 1U;
+}
+
 void esbInit()
 {
   NRF_RADIO->POWER = 1;
@@ -365,24 +440,23 @@ void esbInit()
 
 
   NRF_RADIO->TXPOWER = (txpower << RADIO_TXPOWER_TXPOWER_Pos);
+  NRF_RADIO->TEST = 0;
 
-  switch (datarate) {
-  case esbDatarate250K:
-      NRF_RADIO->MODE = (RADIO_MODE_MODE_Nrf_250Kbit << RADIO_MODE_MODE_Pos);
-      break;
-  case esbDatarate1M:
-      NRF_RADIO->MODE = (RADIO_MODE_MODE_Nrf_1Mbit << RADIO_MODE_MODE_Pos);
-      break;
-  case esbDatarate2M:
-      NRF_RADIO->MODE = (RADIO_MODE_MODE_Nrf_2Mbit << RADIO_MODE_MODE_Pos);
-      break;
-  }
+  configureRadioDatarate();
 
   NRF_RADIO->FREQUENCY = channel;
 
-  if (contwave) {
-    NRF_RADIO->TEST = 3;
-    NRF_RADIO->TASKS_RXEN = 1U;
+  if (radioTestMode != esbRadioTestModeDisabled) {
+    NRF_RADIO->INTENCLR = RADIO_INTENSET_END_Msk;
+    NVIC_DisableIRQ(RADIO_IRQn);
+
+    if (radioTestMode == esbRadioTestModeUnmodulated) {
+      startUnmodulatedRadioTest();
+    } else {
+      startModulatedRadioTest();
+    }
+
+    isInit = true;
     return;
   }
 
@@ -444,19 +518,20 @@ void esbReset()
 {
   if (!isInit) return;
 
-  if (!bleEnabled) {
-    __disable_irq();
-  }
+  // The SoftDevice owns the radio outside an allocated timeslot. Settings are
+  // retained and picked up by the next timeslot instead of touching the radio.
+  if (bleEnabled) return;
 
+  __disable_irq();
+
+  NRF_RADIO->SHORTS = 0;
   NRF_RADIO->TASKS_DISABLE = 1;
   NRF_RADIO->POWER = 0;
 
   NVIC_GetPendingIRQ(RADIO_IRQn);
   __enable_irq();
 
-  if (!bleEnabled) {
-    esbInit();
-  }
+  esbInit();
 }
 
 void esbDeinit()
@@ -538,40 +613,42 @@ void esbSendP2PPacket(uint8_t port, char *data, uint8_t length)
 void esbSetDatarate(EsbDatarate dr)
 {
 #if !defined(RADIOTEST) || (RADIOTEST == 0)
-  datarate = dr;
-  esbReset();
+  if (dr > esbDatarateBle1M) return;
+
+  radioTestDatarate = dr;
+
+  // BLE 1M is a test-only PHY. Keep the last proprietary data rate so
+  // stopping the test always restores a usable ESB radio configuration.
+  if (dr != esbDatarateBle1M) {
+    esbDatarate = dr;
+  }
+
+  if ((radioTestMode != esbRadioTestModeDisabled) || (dr != esbDatarateBle1M)) {
+    esbReset();
+  }
 #endif
 }
 
 
-#ifdef BLE
-void ble_advertising_stop(void);
-void advertising_start(void);
-void ble_sd_stop(void);
-#endif
+void esbSetRadioTestMode(EsbRadioTestMode mode)
+{
+  if (mode > esbRadioTestModeModulated) return;
+
+  radioTestMode = mode;
+
+  esbReset();
+}
 
 void esbSetContwave(bool enable)
 {
-  contwave = enable;
-
-#ifdef BLE
-  if (bleEnabled) {
-    if (enable) {
-//      ble_advertising_stop();
-    } else {
-//      advertising_start();
-    }
-  }
-#endif
-
-  esbReset();
+  esbSetRadioTestMode(enable ? esbRadioTestModeUnmodulated : esbRadioTestModeDisabled);
 }
 
 void esbSetChannel(unsigned int ch)
 {
-  if (channel < 126) {
-	  channel = ch;
-	}
+  if (ch >= 126) return;
+
+  channel = ch;
 
   esbReset();
 }

@@ -75,7 +75,7 @@ full duplex at any moment.
 -   **Type**: 0x01
 -   **Data format**: One uint8\_t indicating the radio channel
 
-This packet is used only in ESB mode.
+This packet configures the channel used by ESB and radio-test modes.
 
 Packet sent to the NRF51 to set the radio channel to use. The NRF51 then
 send back the same packet to confirm that the setting has been done.
@@ -87,7 +87,9 @@ NRF51 radio channel are spaced by 1MHz from 2400MHz to 2525MHz.
 -   **Type**: 0x02
 -   **Data format**: One uint8\_t indicating the radio datarate.
 
-This packet is used only in ESB mode.
+This packet configures the ESB data rate and the radio-test PHY. BLE
+1Mbps is only applied while a radio test is active; disabling the test
+restores the last configured proprietary ESB data rate.
 
 Packet sent to the NRF51 to set the radio datarate to use. The NRF51
 then send back the same packet to confirm that the setting has been
@@ -100,20 +102,36 @@ Possible datarate:
  | 0      | 250Kbps|
  | 1      | 1Mbps|
  | 2      | 2Mbps|
+ | 3      | Bluetooth Low Energy 1Mbps PHY (radio test only)|
 
-### SYSLINK\_RADIO\_CONTWAVE
+### SYSLINK\_RADIO\_CONTWAVE / SYSLINK\_RADIO\_TEST
 
 -   **Type**: 0x03
--   **Data format**: One uint8\_t at 0 for disable, \>0 for enable.
+-   **Data format**: One uint8\_t selecting the radio test mode.
 
-Allows to put the nRF51 in continuous wave mode. If enabled the nRF51
-will disable Bluetooth advertising and set its radio to emit a
-continuous sinus wave at the currently set channel frequency.
+Possible modes:
 
-**Warning** _Continuous wave is a test
-mode used, among other thing, during manufacturing test. It will affect
-other wireless communication like Wifi and should be used with care in a
-test environment_
+ | Value  | Mode|
+ | -------| ----------|
+ | 0      | Disable radio test and return to normal packet mode|
+ | 1      | Unmodulated continuous carrier|
+ | 2      | Modulated carrier: continuously transmit a whitened 254-byte packet|
+
+Allows the nRF51 to transmit an unmodulated or modulated test signal at
+the currently configured channel, data rate, and output power. The
+modulated test repeatedly transmits the same pseudo-random payload with
+hardware data whitening enabled. The Bluetooth Low Energy 1Mbps setting
+selects the BLE PHY but does not generate Bluetooth-compliant link-layer
+packets.
+
+Enabling either test mode disables the Bluetooth SoftDevice, including
+advertising, before taking direct ownership of the radio. Disabling the
+test returns to ESB packet mode; reboot the nRF51 to resume Bluetooth
+advertising.
+
+**Warning** _These radio test modes are used, among other things, during
+manufacturing tests. They will affect other wireless communication such
+as Wi-Fi and should be used with care in a test environment._
 
 ### SYSLINK\_RADIO\_RSSI
 

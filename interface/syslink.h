@@ -94,6 +94,9 @@ uint8_t syslinkGetRxCheckSum2ErrorCnt();
 #define SYSLINK_RADIO_P2P_BROADCAST 0x0A
 #define SYSLINK_RADIO_READY         0x0B
 
+/* RADIO_CONTWAVE is the legacy name for the radio test command. */
+#define SYSLINK_RADIO_TEST SYSLINK_RADIO_CONTWAVE
+
 
 #define SYSLINK_PM_SOURCE             0x10
 #define SYSLINK_PM_ONOFF_SWITCHOFF    0x11
