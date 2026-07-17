@@ -105,6 +105,10 @@ static bool debugProbeReceivedRate = false;
 static bool radioReadyCommandReceived = false;
 static uint32_t sysonTime = 0;
 
+// Set by the STM32, cleared on system restart to keep the bootloader reachable
+static bool disableRadioOnUsb = false;
+static bool radioIsDisabled = false;
+
 int main()
 {
   // Stop early if the platform is not supported
@@ -204,6 +208,8 @@ void mainloop()
   static bool radioStartupGateHandled = false;
   static uint32_t startupTime = 0;
 
+  static PmState lastPmState = pmSysOff;
+
   while(1)
   {
     // Handle radio startup gate (only once)
@@ -213,10 +219,34 @@ void mainloop()
       }
 
       // Check if we should open the gate
-      if (radioReadyCommandReceived || 
+      if (radioReadyCommandReceived ||
            (systickGetTick() >= startupTime + SYSLINK_RADIO_DISABLED_TIMEOUT_MS)) {
         esbAllowStart();
         radioStartupGateHandled = true;
+      }
+    }
+
+    // The STM32 is going down or restarting, drop its policy. It resends it on boot.
+    PmState pmState = pmGetState();
+    if (pmState != lastPmState) {
+      lastPmState = pmState;
+      disableRadioOnUsb = false;
+    }
+
+    // Turn the radio off while charging, if the STM32 asked for it
+    if (radioStartupGateHandled) {
+      bool shouldDisable = disableRadioOnUsb && pmIsUsbPluggedIn();
+
+      if (shouldDisable != radioIsDisabled) {
+        radioIsDisabled = shouldDisable;
+        if (shouldDisable) {
+          // Take the radio back from the softdevice before powering it off
+          disableBle();
+          esbDeinit();
+        } else {
+          esbInit();
+          esbAllowStart();
+        }
       }
     }
 #ifdef BLE
@@ -469,6 +499,9 @@ static void handleSyslinkEvents(bool slReceived)
         slTxPacket.type = SYSLINK_RADIO_READY;
         slTxPacket.length = 0;
         syslinkSend(&slTxPacket);
+        break;
+      case SYSLINK_RADIO_DISABLE_ON_USB:
+        disableRadioOnUsb = (slRxPacket.length >= 1) && (slRxPacket.data[0] != 0);
         break;
       case SYSLINK_PM_DECKCTRL_DFU:
         pmDeckctrlDfu(slRxPacket.data[0]);
