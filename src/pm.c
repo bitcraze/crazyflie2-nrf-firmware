@@ -61,9 +61,10 @@ static bool systemBootloader=false;
 
 typedef struct {
   uint8_t isCharging   : 1;
-  uint8_t usbPluggedIn : 1;
+  uint8_t powerGood    : 1;
   uint8_t canCharge    : 1;
-  uint8_t unused       : 5;
+  uint8_t overTemp     : 1;
+  uint8_t unused       : 4;
 } power_flag_t;
 
 typedef enum {adcVBAT, adcISET} ADCState;
@@ -73,6 +74,7 @@ static ADCState adcState = adcVBAT;
 static float vBat;
 static float iSet;
 static float temp;
+static uint8_t tempGood = 1;
 
 // Pre-built battery voltage response packet for direct ACK in radio interrupt
 static uint8_t vbatResponsePacket[7] = {0xff, 0xfe, 0x04, 0, 0, 0, 0};
@@ -112,14 +114,16 @@ uint8_t getPowerStatusFlags() {
   if (pmConfig->hasCharger) {
     // On the Crazyflie 'pGood' means valid input voltage from USB.
     powerFlags.isCharging   = !isCharging;  // Active LOW
-    powerFlags.usbPluggedIn = !pGood;       // Active LOW
-    powerFlags.canCharge    = 1;            //
+    powerFlags.powerGood    = !pGood;       // Active LOW
+    powerFlags.canCharge    = 1;            // has a charger
+    powerFlags.overTemp     = !tempGood;
   } else {
     // Bolt doesn't have a battery charger and the nRF can't detect if
     // USB is pluggged in.
-    powerFlags.usbPluggedIn   = 0;      // We don't know
+    powerFlags.powerGood      = 0;      // We don't know
     powerFlags.isCharging     = 0;      // Not used
     powerFlags.canCharge      = 0;      // No charger on bolt
+    powerFlags.overTemp       = 0;
   }
 
   return *( (uint8_t*) &powerFlags );
@@ -492,16 +496,16 @@ void pmProcess() {
     temp = (float)(NRF_TEMP->TEMP / 4.0);
     if (temp < PM_CHARGE_MIN_TEMP || temp > PM_CHARGE_MAX_TEMP)
     {
+      tempGood = 0;
       // Disable charging
       nrf_gpio_pin_set(PM_CHG_EN);
-//      LED_OFF();
     }
     else if (temp > PM_CHARGE_MIN_TEMP + PM_CHARGE_HYSTERESIS  &&
              temp < PM_CHARGE_MAX_TEMP - PM_CHARGE_HYSTERESIS)
     {
+      tempGood = 1;
       // Enable charging
       nrf_gpio_pin_clear(PM_CHG_EN);
-//      LED_ON();
     }
   }
 #endif
