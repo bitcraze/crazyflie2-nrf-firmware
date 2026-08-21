@@ -106,6 +106,11 @@ uint8_t pmIsCharging() {
   return nrf_gpio_pin_read(PM_CHG_PIN);
 }
 
+bool pmIsUsbPluggedIn() {
+  // 'pGood' means valid input voltage from USB and is active LOW
+  return pmConfig->hasCharger && !pmPGood();
+}
+
 uint8_t getPowerStatusFlags() {
   power_flag_t powerFlags;
   uint8_t isCharging = pmIsCharging();

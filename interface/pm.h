@@ -35,6 +35,9 @@ void pmInit();
 /* Return power flags that indicate if we're plugged in to USB, currently charging and if we can charge. */
 uint8_t getPowerStatusFlags();
 
+/* Return true if USB is plugged in. Always false on platforms without a charger (such as Bolt). */
+bool pmIsUsbPluggedIn();
+
 float pmGetVBAT(void);
 
 /* Get pre-built battery voltage response packet for direct radio ACK */
