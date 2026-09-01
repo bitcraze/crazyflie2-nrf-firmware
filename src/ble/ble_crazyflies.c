@@ -1,5 +1,6 @@
 #include "sdk_common.h"
 #include "ble_crazyflies.h"
+#include "ble_crtpdown.h"
 
 #define NRF_LOG_MODULE_NAME "CRAZYFLIE_SRV"
 #include "nrf_log.h"
@@ -34,6 +35,7 @@ static void on_write(ble_crazyflie_t* p_crazyflie, ble_evt_t const* p_ble_evt) {
 
 static void on_connect(ble_crazyflie_t* p_crazyflie, ble_evt_t const* p_ble_evt) {
     p_crazyflie->conn_handle = p_ble_evt->evt.gap_evt.conn_handle;
+    p_crazyflie->crtpdown_pid = 0;
     sd_ble_tx_packet_count_get(p_crazyflie->conn_handle, &p_crazyflie->tx_pk_free);
 }
 
@@ -230,6 +232,7 @@ uint32_t ble_crazyflie_init(ble_crazyflie_t *p_crazyflie, const ble_crazyflie_in
     p_crazyflie->conn_handle = BLE_CONN_HANDLE_INVALID;
     p_crazyflie->data_handler = p_crazyflie_init->data_handler;
     p_crazyflie->crtpdown_notification_enabled = false;
+    p_crazyflie->crtpdown_pid = 0;
 
     return NRF_SUCCESS;
 }
@@ -291,36 +294,27 @@ static uint32_t send_crtpdown_notification(ble_crazyflie_t *p_crazyflie, uint8_t
 }
 
 uint32_t ble_crazyflie_send_packet(ble_crazyflie_t *p_crazyflie, uint8_t *p_data, uint16_t length) {
-    uint32_t err_code;
-    uint8_t packet[32];
-
-    if (length > 31) {
+    BleCrtpdownFragments fragments;
+    if (!bleCrtpdownBuildFragments(p_data, length, p_crazyflie->crtpdown_pid,
+                                   &fragments)) {
         return NRF_ERROR_INVALID_PARAM;
     }
 
     NRF_LOG_DEBUG("Tx Pk free: %d\n", p_crazyflie->tx_pk_free);
 
-    packet[0] = 0x80 | length;
+    if (p_crazyflie->tx_pk_free < fragments.count) {
+        return NRF_ERROR_NO_MEM;
+    }
 
-    if (length > GATT_MTU_SIZE_DEFAULT - 3 - 1) {
-        if (p_crazyflie->tx_pk_free < 2) {
-            return NRF_ERROR_NO_MEM;
+    for (uint8_t i = 0; i < fragments.count; i++) {
+        uint32_t err_code = send_crtpdown_notification(
+            p_crazyflie, fragments.fragments[i].data, fragments.fragments[i].length);
+        VERIFY_SUCCESS(err_code);
+
+        if (i == 0) {
+            p_crazyflie->crtpdown_pid =
+                bleCrtpdownNextPid(p_crazyflie->crtpdown_pid);
         }
-
-        memcpy(packet+1, p_data, GATT_MTU_SIZE_DEFAULT - 3 - 1);
-        err_code = send_crtpdown_notification(p_crazyflie, packet, GATT_MTU_SIZE_DEFAULT - 3 - 1 + 1);
-        VERIFY_SUCCESS(err_code);
-        memcpy(packet+1, p_data+GATT_MTU_SIZE_DEFAULT - 3, length - (GATT_MTU_SIZE_DEFAULT - 3 - 1));
-        err_code = send_crtpdown_notification(p_crazyflie, packet, length - (GATT_MTU_SIZE_DEFAULT - 3 - 1) + 1);
-        VERIFY_SUCCESS(err_code);
-    } else {
-        if (p_crazyflie->tx_pk_free < 1) {
-            return NRF_ERROR_NO_MEM;
-        }
-
-        memcpy(packet+1, p_data, length);
-        err_code = send_crtpdown_notification(p_crazyflie, packet, length+1);
-        VERIFY_SUCCESS(err_code);
     }
 
     return NRF_SUCCESS;
