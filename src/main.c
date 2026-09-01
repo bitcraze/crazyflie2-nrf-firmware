@@ -34,6 +34,7 @@
 #include "uart.h"
 #include "esb.h"
 #include "syslink.h"
+#include "syslink_radio.h"
 #include "led.h"
 #include "button.h"
 #include "pm.h"
@@ -321,31 +322,33 @@ static void handleSyslinkEvents(bool slReceived)
     switch (slRxPacket.type)
     {
       case SYSLINK_RADIO_RAW:
-        if (esbCanTxPacket() && (slRxPacket.length < SYSLINK_MTU))
-        {
-          EsbPacket* packet = esbGetTxPacket();
-
-          if (packet) {
-            memcpy(packet->data, slRxPacket.data, slRxPacket.length);
-            packet->size = slRxPacket.length;
-
-            esbSendTxPacket(packet);
-          }
-          bzero(slRxPacket.data, SYSLINK_MTU);
+      {
+        EsbPacket* esbPacket = NULL;
+        if (esbCanTxPacket()) {
+          esbPacket = esbGetTxPacket();
         }
 
 #ifdef BLE
-        if (bleEnabled) {
-          if (slRxPacket.length < SYSLINK_MTU) {
-            static EsbPacket pk;
-            memcpy(pk.data,  slRxPacket.data, slRxPacket.length);
-            pk.size = slRxPacket.length;
-            ble_send_packet(&pk);
-          }
-        }
+        static EsbPacket blePacket;
+        EsbPacket* bleDestination = bleEnabled ? &blePacket : NULL;
+#else
+        EsbPacket* bleDestination = NULL;
 #endif
 
+        if (syslinkRadioRawFanOut(&slRxPacket, esbPacket, bleDestination)) {
+          if (esbPacket) {
+            esbSendTxPacket(esbPacket);
+          }
+
+#ifdef BLE
+          if (bleDestination) {
+            ble_send_packet(bleDestination);
+          }
+#endif
+        }
+
         break;
+      }
       case SYSLINK_RADIO_CHANNEL:
         if(slRxPacket.length == 1)
         {

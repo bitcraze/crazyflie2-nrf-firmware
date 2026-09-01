@@ -103,6 +103,7 @@ SRC_FILES += $(PROJ_DIR)/ow/owtran.c
 SRC_FILES += $(PROJ_DIR)/ow/crcutil.c
 SRC_FILES += $(PROJ_DIR)/pm.c
 SRC_FILES += $(PROJ_DIR)/syslink.c
+SRC_FILES += $(PROJ_DIR)/syslink_radio.c
 SRC_FILES += $(PROJ_DIR)/esb.c
 SRC_FILES += $(PROJ_DIR)/main.c
 SRC_FILES += $(PROJ_DIR)/uart.c
@@ -292,7 +293,7 @@ endif
 test: $(HOST_TEST)
 	$(HOST_TEST)
 
-$(HOST_TEST): test/issue_101_test.c src/ble/ble_crtpdown.c
+$(HOST_TEST): test/issue_101_test.c src/ble/ble_crtpdown.c src/syslink_radio.c
 	@mkdir -p $(@D)
 	$(HOST_CC) -std=c11 -Wall -Wextra -Werror -Iinterface $^ -o $@
 

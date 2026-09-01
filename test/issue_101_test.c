@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "ble_crtpdown.h"
+#include "syslink_radio.h"
 
 #define CHECK(condition)                                                        \
   do {                                                                          \
@@ -136,6 +137,32 @@ static int testRejectsInvalidPacketLengths(void)
   return 0;
 }
 
+static int testFirstSevenSyslinkPacketsReachBleUnmodified(void)
+{
+  for (uint8_t packetNumber = 0; packetNumber < 7; packetNumber++) {
+    struct syslinkPacket source = {
+      .type = SYSLINK_RADIO_RAW,
+      .length = 4,
+      .data = {packetNumber, 0xA5, 0x5A, (char)(0xF0 | packetNumber)},
+    };
+    const uint8_t expected[] = {
+      packetNumber, 0xA5, 0x5A, (uint8_t)(0xF0 | packetNumber),
+    };
+    EsbPacket esbPacket = {0};
+    EsbPacket blePacket = {0};
+
+    CHECK(syslinkRadioRawFanOut(&source, &esbPacket, &blePacket));
+    memset(source.data, 0, sizeof(source.data));
+
+    CHECK(esbPacket.size == sizeof(expected));
+    CHECK(memcmp(esbPacket.data, expected, sizeof(expected)) == 0);
+    CHECK(blePacket.size == sizeof(expected));
+    CHECK(memcmp(blePacket.data, expected, sizeof(expected)) == 0);
+  }
+
+  return 0;
+}
+
 int main(void)
 {
   if (testBuildsSingleBytePacket()) {
@@ -157,6 +184,9 @@ int main(void)
     return 1;
   }
   if (testRejectsInvalidPacketLengths()) {
+    return 1;
+  }
+  if (testFirstSevenSyslinkPacketsReachBleUnmodified()) {
     return 1;
   }
   puts("issue 101 regression tests passed");
