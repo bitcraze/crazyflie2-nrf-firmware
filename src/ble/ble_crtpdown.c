@@ -2,7 +2,7 @@
 
 #include <string.h>
 
-#define MAX_FRAGMENT_PAYLOAD 19
+#define MAX_FRAGMENT_PAYLOAD (BLE_CRTPDOWN_MAX_NOTIFICATION_SIZE - 1)
 
 bool bleCrtpdownBuildFragments(const uint8_t *data, uint16_t length, uint8_t pid,
                                BleCrtpdownFragments *result)

@@ -295,7 +295,7 @@ test: $(HOST_TEST)
 
 $(HOST_TEST): test/issue_101_test.c src/ble/ble_crtpdown.c src/syslink_radio.c
 	@mkdir -p $(@D)
-	$(HOST_CC) -std=c11 -Wall -Wextra -Werror -Iinterface $^ -o $@
+	$(HOST_CC) -std=gnu11 -Wall -Wextra -Werror -Iinterface $^ -o $@
 
 # Print all targets that can be built
 help:

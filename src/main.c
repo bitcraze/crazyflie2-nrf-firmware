@@ -337,7 +337,7 @@ static void handleSyslinkEvents(bool slReceived)
 
         if (syslinkRadioRawFanOut(&slRxPacket, esbPacket, bleDestination)) {
           if (esbPacket) {
-            esbSendTxPacket(esbPacket);
+            esbSendTxPacket();
           }
 
 #ifdef BLE
