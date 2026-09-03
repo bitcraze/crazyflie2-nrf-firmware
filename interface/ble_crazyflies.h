@@ -48,6 +48,7 @@ struct ble_crazyflie_s {
     ble_crazyflie_data_handler_t data_handler;
 
     uint8_t tx_pk_free;
+    uint8_t crtpdown_pid;
 };
 
 typedef struct {
