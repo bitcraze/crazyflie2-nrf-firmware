@@ -37,20 +37,67 @@
 #include "platform.h"
 
 /**
+ * Enable battery charge relaxation feature. When enabled, the charger will
+ * stop charging until restart threshold is reached. This helps prevent the 
+ * battery from staying 100% charged all the time when pluggend in.
+ */
+//#define ENABLE_BATTERY_CHARGE_RELAXATION
+#define PM_RECHARGE_VOLTAGE_THRESHOLD  (3.8) // Voltage to restart charge after full charge
+
+/**
+ * Enable full charge voltage cutoff. When enabled, the charger will stop
+ * charging when the battery reaches PM_CHARGE_FULL_VOLTAGE.
+ */
+//#define ENABLE_CHARGE_FULL_VOLTAGE_CUTOFF
+#define PM_CHARGE_FULL_HYSTERESIS (0.20) 
+
+/**
+ * Choose the voltage level for full charge cutoff, if enabled.
+ * 4.10V = ~80% charge
+ * 4.17V = ~90% charge
+ */
+#define PM_CHARGE_FULL_VOLTAGE    (4.17)
+
+#if defined(ENABLE_BATTERY_CHARGE_RELAXATION) && defined(ENABLE_CHARGE_FULL_VOLTAGE_CUTOFF)
+  #error "ENABLE_BATTERY_CHARGE_RELAXATION and ENABLE_CHARGE_FULL_VOLTAGE_CUTOFF cannot be enabled at the same time."
+#endif
+
+
+/**
+ * Disable charging when the system is off. This consumes 14uA more current when off
+ * compared to ~10uA otherwise.
+ */
+//#define PM_DISABLE_CHARGING_WHEN_OFF
+
+/**
  * The max and min temp to charge. Since we are using nrf inbuilt temp sensor and
  * the board heat it the reading is at least 10-15 deg too warm.
  */
-#define PM_CHARGE_MIN_TEMP  (15.0)
-#define PM_CHARGE_MAX_TEMP  (60.0)
-#define PM_CHARGE_HYSTERESIS (1.0)
+#define PM_CHARGE_MIN_TEMP        (15.0)
+#define PM_CHARGE_MAX_TEMP        (60.0)
+#define PM_CHARGE_HYSTERESIS_TEMP (1.0)
 
+/**
+ * Enable fast charge current of 1A. Make sure the battery can handle this!
+ */
 //#define ENABLE_FAST_CHARGE_1A
+
+/**
+ * Enable RFX2411N bypass mode. This will disable the
+ * PA and introduce more loss in the RF path.
+ */
 //#define RFX2411N_BYPASS_MODE
 
 #if defined(ENABLE_8MHZ_HSE_CLK_TO_STM) && defined(BLE)
   #error "Can't enable 8MHz HSE clock to STM when BLE is enabled due to resource conflict."
 #endif
 
+#define PM_ENABLE_CHARGING()       nrf_gpio_pin_clear(PM_CHG_EN)
+#define PM_DISABLE_CHARGING()      nrf_gpio_pin_set(PM_CHG_EN)
+#define PM_CHARGE_DEBUG_LED_ON()
+//#define PM_CHARGE_DEBUG_LED_ON()   LED_ON()
+#define PM_CHARGE_DEBUG_LED_OFF()
+//#define PM_CHARGE_DEBUG_LED_OFF()  LED_OFF()
 
 extern int bleEnabled;
 
@@ -80,6 +127,8 @@ static uint8_t tempGood = 1;
 static uint8_t vbatResponsePacket[7] = {0xff, 0xfe, 0x04, 0, 0, 0, 0};
 static uint8_t vbatResponseSize = sizeof(vbatResponsePacket);
 
+static bool tempChargeStateDisabled = false;
+
 void pmInit()
 {
   state = pmSysOff; //When NRF starts, the system is OFF
@@ -98,12 +147,16 @@ void pmInit()
   pmConfig = platformGetPmConfig();
 }
 
-uint8_t pmPGood() {
-  return nrf_gpio_pin_read(PM_PGOOD_PIN);
+bool pmPGood() {
+  return !nrf_gpio_pin_read(PM_PGOOD_PIN); // Active LOW
 }
 
-uint8_t pmIsCharging() {
-  return nrf_gpio_pin_read(PM_CHG_PIN);
+bool pmIsCharging() {
+  return !nrf_gpio_pin_read(PM_CHG_PIN); // Active LOW
+}
+
+bool pmIsFullyCharged() {
+  return (pmPGood() && !pmIsCharging());
 }
 
 uint8_t getPowerStatusFlags() {
@@ -113,9 +166,9 @@ uint8_t getPowerStatusFlags() {
 
   if (pmConfig->hasCharger) {
     // On the Crazyflie 'pGood' means valid input voltage from USB.
-    powerFlags.isCharging   = !isCharging;  // Active LOW
-    powerFlags.powerGood    = !pGood;       // Active LOW
-    powerFlags.canCharge    = 1;            // has a charger
+    powerFlags.isCharging   = isCharging;  
+    powerFlags.powerGood    = pGood;       
+    powerFlags.canCharge    = 1;
     powerFlags.overTemp     = !tempGood;
   } else {
     // Bolt doesn't have a battery charger and the nRF can't detect if
@@ -128,14 +181,6 @@ uint8_t getPowerStatusFlags() {
 
   return *( (uint8_t*) &powerFlags );
 }
-
-/*ChgState chgState(void) {
-
-	int pgood = nrf_gpio_pin_read(PM_PGOOD_PIN);
-	int chg = nrf_gpio_pin_read(PM_CHG_PIN);
-
-	if (pgood)
-}*/
 
 static void pmStartAdc(ADCState state)
 {
@@ -175,7 +220,11 @@ static void pmNrfPower(bool enable)
     // CE, EN1 and EN2 externally pulled low. Put low to not draw any current.
     nrf_gpio_pin_clear(PM_EN1);
     nrf_gpio_pin_clear(PM_EN2);
-    nrf_gpio_pin_clear(PM_CHG_EN);
+#ifdef PM_DISABLE_CHARGING_WHEN_OFF
+    PM_DISABLE_CHARGING();
+#else
+    PM_ENABLE_CHARGING();
+#endif
 
     nrf_gpio_cfg_input(PM_VBAT_SINK_PIN, NRF_GPIO_PIN_NOPULL);
 
@@ -338,7 +387,7 @@ static void pmRunSystem(bool enable)
     #endif
       // Enable charging
       nrf_gpio_cfg_output(PM_CHG_EN);
-      nrf_gpio_pin_clear(PM_CHG_EN);
+      PM_ENABLE_CHARGING();
     }
 
     if (platformHasRfx2411n()) {
@@ -439,7 +488,8 @@ const struct {
   [pmSysRunning] =   { .call = pmRunSystem,   .delay = 2, .delayUp = 2},
 };
 
-void pmProcess() {
+void pmProcess() 
+{
   static int lastTick = 0;
   static int lastAdcTick = 0;
 
@@ -486,26 +536,96 @@ void pmProcess() {
 		  iSet = (v * 400.0) / 1000.0;
 		  pmStartAdc(adcVBAT);
 	  }
-	  //TODO: Handle the battery charging...
   }
+
+#ifdef ENABLE_BATTERY_CHARGE_RELAXATION
+static bool chargeRelaxationEnabled = true;
+static uint32_t stateChangeCounter = 0;
+#define STATE_CHANGE_THRESHOLD 100
+
+  if (pmConfig->hasCharger && tempChargeStateDisabled == false)
+  {
+    if (chargeRelaxationEnabled)
+    {
+      // Battery is relaxing - check if voltage dropped below recharge threshold
+      if (vBat < PM_RECHARGE_VOLTAGE_THRESHOLD)
+      {
+        stateChangeCounter++;
+        if (stateChangeCounter >= STATE_CHANGE_THRESHOLD)
+        {
+          // Re-enable charging
+          stateChangeCounter = 0;
+          chargeRelaxationEnabled = false;
+          PM_ENABLE_CHARGING();
+          PM_CHARGE_DEBUG_LED_ON();
+        }
+      }
+    }
+    else
+    {
+      // Normal charging - check if battery is fully charged
+      if (pmIsFullyCharged())
+      {
+        stateChangeCounter++;
+        // Check that it is fully charged for a while
+        if (stateChangeCounter >= STATE_CHANGE_THRESHOLD)
+        {
+          // Start charge relaxation
+          stateChangeCounter = 0;
+          chargeRelaxationEnabled = true;
+          PM_DISABLE_CHARGING();
+          PM_CHARGE_DEBUG_LED_OFF();
+        }
+      }
+    }
+  }
+#endif
+ 
+#ifdef ENABLE_CHARGE_FULL_VOLTAGE_CUTOFF
+  if (pmConfig->hasCharger && tempChargeStateDisabled == false)
+  {
+    if (vBat >= PM_CHARGE_FULL_VOLTAGE)
+    {
+      // Disable charging
+      PM_DISABLE_CHARGING();
+      PM_CHARGE_DEBUG_LED_OFF();
+    }
+    else if (vBat <= PM_CHARGE_FULL_VOLTAGE - PM_CHARGE_FULL_HYSTERESIS)
+    {
+      // Enable charging
+      PM_ENABLE_CHARGING();
+      PM_CHARGE_DEBUG_LED_ON();
+    }
+  }
+#endif
 
 #ifndef DISABLE_CHARGE_TEMP_CONTROL
   // Check that environmental temp is OK for charging
   if (pmConfig->hasCharger && NRF_TEMP->EVENTS_DATARDY)
   {
     temp = (float)(NRF_TEMP->TEMP / 4.0);
-    if (temp < PM_CHARGE_MIN_TEMP || temp > PM_CHARGE_MAX_TEMP)
+    if (tempChargeStateDisabled == false)
     {
       tempGood = 0;
-      // Disable charging
-      nrf_gpio_pin_set(PM_CHG_EN);
+      if (temp < PM_CHARGE_MIN_TEMP || temp > PM_CHARGE_MAX_TEMP)
+      {
+        // Disable charging
+        tempChargeStateDisabled = true;
+        PM_DISABLE_CHARGING();
+        PM_CHARGE_DEBUG_LED_OFF();
+      }
     }
-    else if (temp > PM_CHARGE_MIN_TEMP + PM_CHARGE_HYSTERESIS  &&
-             temp < PM_CHARGE_MAX_TEMP - PM_CHARGE_HYSTERESIS)
+    else
     {
       tempGood = 1;
-      // Enable charging
-      nrf_gpio_pin_clear(PM_CHG_EN);
+      if (temp > PM_CHARGE_MIN_TEMP + PM_CHARGE_HYSTERESIS_TEMP  &&
+          temp < PM_CHARGE_MAX_TEMP - PM_CHARGE_HYSTERESIS_TEMP)
+      {
+        // Enable charging
+        tempChargeStateDisabled = false;
+        PM_ENABLE_CHARGING();
+        PM_CHARGE_DEBUG_LED_ON();
+      }
     }
   }
 #endif
