@@ -148,11 +148,11 @@ void pmInit()
 }
 
 bool pmPGood() {
-  return !nrf_gpio_pin_read(PM_PGOOD_PIN);
+  return !nrf_gpio_pin_read(PM_PGOOD_PIN); // Active LOW
 }
 
 bool pmIsCharging() {
-  return !nrf_gpio_pin_read(PM_CHG_PIN);
+  return !nrf_gpio_pin_read(PM_CHG_PIN); // Active LOW
 }
 
 bool pmIsFullyCharged() {
@@ -166,9 +166,9 @@ uint8_t getPowerStatusFlags() {
 
   if (pmConfig->hasCharger) {
     // On the Crazyflie 'pGood' means valid input voltage from USB.
-    powerFlags.isCharging   = !isCharging;  // Active LOW
-    powerFlags.powerGood    = !pGood;       // Active LOW
-    powerFlags.canCharge    = 1;            // has a charger
+    powerFlags.isCharging   = isCharging;  
+    powerFlags.powerGood    = pGood;       
+    powerFlags.canCharge    = 1;
     powerFlags.overTemp     = !tempGood;
   } else {
     // Bolt doesn't have a battery charger and the nRF can't detect if
@@ -181,14 +181,6 @@ uint8_t getPowerStatusFlags() {
 
   return *( (uint8_t*) &powerFlags );
 }
-
-/*ChgState chgState(void) {
-
-	int pgood = nrf_gpio_pin_read(PM_PGOOD_PIN);
-	int chg = nrf_gpio_pin_read(PM_CHG_PIN);
-
-	if (pgood)
-}*/
 
 static void pmStartAdc(ADCState state)
 {
