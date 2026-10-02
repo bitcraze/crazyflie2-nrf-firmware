@@ -426,6 +426,23 @@ void pmSysBootloader(bool enable)
   systemBootloader = enable;
 }
 
+void pmStm32Dfu(void)
+{
+  // Restart the STM32 with BOOT0 high so that it starts its ROM bootloader
+  // (USB DFU), as a long button press from off does
+  systemBootloader = true;
+
+  pmSetState(pmSysOff);
+  while (pmGetState() != pmSysOff) {
+    pmProcess();
+    delay(1);
+  }
+
+  delay(10); // Wait a bit to ensure power is down
+
+  pmSetState(pmSysRunning);
+}
+
 /* Defines all the power states for easy-usage by a generic state machine */
 const struct {
   void (*call)(bool enable);

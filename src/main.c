@@ -607,6 +607,7 @@ static void handleRadioCmd(struct esbPacket_s *packet)
 #define BOOTLOADER_CMD_GETVBAT    0x04
 #define BOOTLOADER_CMD_LED_ON     0x05
 #define BOOTLOADER_CMD_LED_OFF    0x06
+#define BOOTLOADER_CMD_STM32_DFU  0x07
 
 static void handleBootloaderCmd(struct esbPacket_s *packet)
 {
@@ -690,6 +691,12 @@ static void handleBootloaderCmd(struct esbPacket_s *packet)
       break;
     case BOOTLOADER_CMD_LED_OFF:
       LED_OFF();
+      break;
+    case BOOTLOADER_CMD_STM32_DFU:
+      // The STM32 ROM bootloader does not speak syslink. Stay quiet until the
+      // STM32 is back in its own bootloader or firmware and sends something.
+      syslinkDeactivateUntilPacketReceived();
+      pmStm32Dfu();
       break;
     default:
       break;

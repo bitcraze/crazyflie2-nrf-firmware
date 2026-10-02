@@ -55,4 +55,6 @@ void pmSysBootloader(bool enable);
 
 void pmDeckctrlDfu(bool enable);
 
+void pmStm32Dfu(void);
+
 #endif //__PM_H__
