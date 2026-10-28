@@ -95,6 +95,7 @@ SRC_FILES += $(SDK_ROOT)/components/softdevice/common/softdevice_handler/softdev
 SRC_FILES += $(PROJ_DIR)/ble/ble.c
 SRC_FILES += $(PROJ_DIR)/ble/ble_crazyflies.c
 SRC_FILES += $(PROJ_DIR)/ble/ble_crtpdown.c
+SRC_FILES += $(PROJ_DIR)/ble/ble_crtpup.c
 SRC_FILES += $(PROJ_DIR)/ble/timeslot.c
 SRC_FILES += $(PROJ_DIR)/ow.c
 SRC_FILES += $(PROJ_DIR)/ow/owlnk.c
@@ -280,6 +281,7 @@ LDFLAGS += --specs=nano.specs -lc -lnosys
 
 HOST_CC ?= cc
 HOST_TEST := $(OUTPUT_DIRECTORY)/host/issue_101_test
+HOST_UP_TEST := $(OUTPUT_DIRECTORY)/host/ble_crtpup_test
 
 # Default target - first one defined
 default: $(PROGRAM) test
@@ -290,8 +292,13 @@ else
 endif
 	@echo "Built for platform $(PLATFORM)"
 
-test: $(HOST_TEST)
+test: $(HOST_TEST) $(HOST_UP_TEST)
 	$(HOST_TEST)
+	$(HOST_UP_TEST)
+
+$(HOST_UP_TEST): test/ble_crtpup_test.c src/ble/ble_crtpup.c src/ble/ble_crtpdown.c
+	@mkdir -p $(@D)
+	$(HOST_CC) -std=gnu11 -Wall -Wextra -Werror -Iinterface $^ -o $@
 
 $(HOST_TEST): test/issue_101_test.c src/ble/ble_crtpdown.c src/syslink_radio.c
 	@mkdir -p $(@D)

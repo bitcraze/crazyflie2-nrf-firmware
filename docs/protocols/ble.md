@@ -72,3 +72,21 @@ data.
 
 Allows to receive packets from the copter. The data format is identical
 to CRTPUP.
+
+### CRTPUP validation and connection state
+
+CRTPUP accepts 1–32 byte CRTP packets. A start fragment declares the total
+length minus one and the PID. A continuation must have the same PID and zero
+length bits. A packet contained in a single start fragment is dispatched
+immediately; a longer packet is dispatched only after its declared byte count
+has arrived. The receiver rejects empty/oversized fragments, orphaned or
+mismatched continuations and data exceeding the declared length.
+
+A new start replaces an incomplete packet. Connect and disconnect clear partial
+UP state and the DOWN notification subscription, so a previous connection cannot
+leave a partial packet or subscription active. The wire format above is
+unchanged.
+
+The native `ble_crtpup_test` uses the DOWN fragment builder to check all packet
+lengths 1–32 at all four PIDs, plus malformed input cases. It is included in
+`make test`. CRTPUP tests do not require hardware.

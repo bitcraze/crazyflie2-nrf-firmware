@@ -14,13 +14,10 @@ static void on_write(ble_crazyflie_t* p_crazyflie, ble_evt_t const* p_ble_evt) {
     if (p_evt_write->handle == p_crazyflie->crtp_char_handles.value_handle) {
         p_crazyflie->data_handler(p_crazyflie, p_evt_write->data, p_evt_write->len);
     } else if (p_evt_write->handle == p_crazyflie->crtpup_char_handles.value_handle) {
-        if (p_evt_write->len > 0 && ((p_evt_write->data[0] & 0x80) == 0x80)) {
-            p_crazyflie->packet_length = p_evt_write->data[0] & 0x1F;
-            p_crazyflie->packet_index = p_evt_write->len - 1;
-            memcpy(p_crazyflie->packet_buffer, p_evt_write->data+1, p_evt_write->len-1);
-        } else {
-            memcpy(p_crazyflie->packet_buffer+p_crazyflie->packet_index, p_evt_write->data+1, p_evt_write->len-1);
-            p_crazyflie->data_handler(p_crazyflie, p_crazyflie->packet_buffer, p_crazyflie->packet_length);
+        if (bleCrtpupConsume(&p_crazyflie->uplink, p_evt_write->data, p_evt_write->len))
+        {
+            p_crazyflie->data_handler(p_crazyflie, p_crazyflie->uplink.data,
+                                      p_crazyflie->uplink.length);
         }
     } else if (p_evt_write->handle == p_crazyflie->crtpdown_char_handles.cccd_handle) {
         if (p_evt_write->len == 2) {
@@ -36,12 +33,16 @@ static void on_write(ble_crazyflie_t* p_crazyflie, ble_evt_t const* p_ble_evt) {
 static void on_connect(ble_crazyflie_t* p_crazyflie, ble_evt_t const* p_ble_evt) {
     p_crazyflie->conn_handle = p_ble_evt->evt.gap_evt.conn_handle;
     p_crazyflie->crtpdown_pid = 0;
+    bleCrtpupReset(&p_crazyflie->uplink);
+    p_crazyflie->crtpdown_notification_enabled = false;
     sd_ble_tx_packet_count_get(p_crazyflie->conn_handle, &p_crazyflie->tx_pk_free);
 }
 
 static void on_disconnect(ble_crazyflie_t* p_crazyflie, ble_evt_t const* p_ble_evt) {
     UNUSED_PARAMETER(p_ble_evt);
     p_crazyflie->conn_handle = BLE_CONN_HANDLE_INVALID;
+    p_crazyflie->crtpdown_notification_enabled = false;
+    bleCrtpupReset(&p_crazyflie->uplink);
 }
 
 static uint32_t crtp_char_add(ble_crazyflie_t* p_crazyflie, const ble_crazyflie_init_t* p_crazyflie_init) {

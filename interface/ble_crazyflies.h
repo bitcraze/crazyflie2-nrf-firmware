@@ -25,6 +25,7 @@
 #pragma once
 
 #include "ble.h"
+#include "ble_crtpup.h"
 #include "ble_srv_common.h"
 #include <stdint.h>
 #include <stdbool.h>
@@ -42,9 +43,7 @@ struct ble_crazyflie_s {
     ble_gatts_char_handles_t crtpup_char_handles;
     ble_gatts_char_handles_t crtpdown_char_handles;
     bool crtpdown_notification_enabled;
-    uint8_t packet_buffer[32];
-    uint8_t packet_length;
-    uint8_t packet_index;
+    BleCrtpupState uplink;
     ble_crazyflie_data_handler_t data_handler;
 
     uint8_t tx_pk_free;
